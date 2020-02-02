@@ -10,10 +10,10 @@ This code only checks if Blue has more run numbers than red and prints the diffe
 
 import sys
 import os
-import imp
+import types
+import importlib.machinery
 
-
-root = '/data/mash/marusa/2m3reduced/wifes/'
+root = '/Users/krisstern/pipeline/reduction_scripts/'
 
 obsdate = sys.argv[1]
 
@@ -36,8 +36,11 @@ def get_metadata(obsdate, band='r'):
     #~ print files
     # Read red metadata dict
     for filename in files:
-        print filename
-        config = imp.load_source(filename.replace('.py', ''), filename)
+        print(filename)
+#        config = imp.load_source(filename.replace('.py', ''), filename)
+        loader = importlib.machinery.SourceFileLoader(filename.replace('.py', ''), filename)
+        config = types.ModuleType(loader.name)
+        loader.exec_module(config)
     
     return config
 
@@ -47,7 +50,7 @@ metadata_blue = get_metadata(obsdate, band='b')
 red = metadata_red.night_data
 blue = metadata_blue.night_data
 
-for k, r in red.iteritems():
+for k, r in red.items():
     b=blue[k]
     
     
@@ -57,29 +60,26 @@ for k, r in red.iteritems():
         
         diff = run_b.difference(run_r)
         if len(diff)>0:
-            print k, 'delete from Blue'
-            print diff
-            print
+            print(k, 'delete from Blue')
+            print(diff)
+            print('')
         
         diff = run_r.difference(run_b)
         if len(diff)>0:
-            print k, 'ADD to Blue'
-            print diff
-            print
-        
-        
-        
+            print(k, 'ADD to Blue')
+            print(diff)
+            print('')
         
     else:
         rd=[]
         for x in r:
-            for kk, rr in x.iteritems():
+            for kk, rr in x.items():
                 for x in rr:
                     rd.append(x.split('-')[-1])
 
         bl=[]
         for x in b:
-            for kk, rr in x.iteritems():
+            for kk, rr in x.items():
                 for x in rr:
                     bl.append(x.split('-')[-1])
             
@@ -88,12 +88,12 @@ for k, r in red.iteritems():
         
         diff = bl.difference(rd)
         if len(diff)>0:
-            print k, 'delete from Blue'
-            print diff
-            print
+            print(k, 'delete from Blue')
+            print(diff)
+            print('')
             
         diff = rd.difference(bl)
         if len(diff)>0:
-            print k, 'ADD to Blue'
-            print diff
-            print
+            print(k, 'ADD to Blue')
+            print(diff)
+            print('')

@@ -16,7 +16,7 @@ import sys
 #------------------------------------------------------------------------
 # root needed only for output
 #output_root = "/priv/mulga2/arains/ys/wifes/reduced/"
-output_root = '/priv/mulga1/marusa/2m3reduced/wifes/'
+output_root = '/Users/krisstern/pipeline/reduction_scripts/'
 
 # Do you want to reduce only specific objects? Names must match those in the fits file headers (OBJNAME).
 objectnames=None

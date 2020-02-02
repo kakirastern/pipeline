@@ -11,7 +11,8 @@ import os
 import glob
 from astropy.io import fits as pyfits
 import wifes_calib
-import imp
+import importlib.machinery
+import types
 
 # Calibration files in case some are missing for this night
 import calibration_filenames_date as cal
@@ -24,7 +25,13 @@ stdstar_is_flux_cal = wifes_calib.ref_flux_lookup
 stdstar_is_telluric = wifes_calib.ref_telluric_lookup
 
 # Config file
-config = imp.load_source('config', sys.argv[1])
+loader = importlib.machinery.SourceFileLoader('config', sys.argv[1])
+config = types.ModuleType(loader.name)
+loader.exec_module(config)
+
+print('config', dir(config))
+
+#config = imp.load_source('config', sys.argv[1])
 metadata=config.generate_metadata
 
 
@@ -34,7 +41,7 @@ try:
     #~ opts, args = getopt.getopt(sys.argv,"dark:bias:flat:",["dark=", "bias=", "flat="])
     opts, args = getopt.getopt(sys.argv[3:], "d:b:f:")
 except getopt.GetoptError:
-    print 'test.py -i <inputfile> -o <outputfile>' # TODO
+    print('test.py -i <inputfile> -o <outputfile>') # TODO
 for opt, arg in opts:
     if opt in ("-d"):
         selected_cal_dates['DARK']=int(arg)
@@ -43,11 +50,7 @@ for opt, arg in opts:
     elif opt in ("-f"):
         selected_cal_dates['FLAT']=int(arg)
     
-print 'SELECTED_CAL_DATES', selected_cal_dates
-
-
-
-
+print('SELECTED_CAL_DATES', selected_cal_dates)
 
 ccdsum = metadata['CCDSUM'] #'1 1' # '1 2' # binning
 prefix=metadata['prefix']
@@ -62,14 +65,11 @@ exclude_objectnames=metadata['exclude_objectnames']
 if exclude_objectnames:
     exclude_objectnames = [x.replace(' ', '') for x in exclude_objectnames]
 
-
-
-
 obsdate = sys.argv[2]
 print('OBSDATE', obsdate)
 
 # Input folder with raw data
-data_dir = os.path.join(config.input_root, obsdate) #sys.argv[2]
+data_dir = os.path.join(config.output_root, obsdate) #sys.argv[2] # input_root -> output_root
 
 #~ data_dir = sys.argv[2]
 print('#'+54*'-')
@@ -156,7 +156,7 @@ def find_all_modes():
         try:
             k=[header[x] for x in keywords]
         except:
-            print 'Cannot get full header for', fn, header['IMAGETYP']
+            print('Cannot get full header for', fn, header['IMAGETYP'])
             continue
         
         k=tuple(k) # Lists or sets cannot be dictionary keys
@@ -612,7 +612,7 @@ def write_metadata(science=None, bias=None, domeflat=None, twiflat=None, dark=No
 
     f.close()
     
-    print 'METADATA written in', metadata_filename
+    print('METADATA written in', metadata_filename)
     return True
 
    
@@ -629,7 +629,7 @@ def propose_missing_calib_files(mode=None, calstat=None):
         c=None
     
     # What calib files are missing?
-    for imagetype, status in calstat.iteritems():
+    for imagetype, status in calstat.items():
         if status: # Set lower limit on number of calib files needed.
             if len(status)<3:
                 missing=True
@@ -637,9 +637,9 @@ def propose_missing_calib_files(mode=None, calstat=None):
         else: # Missing. Find them. What if c==None?
             try:
                 dates=c[imagetype] # dates available for this particular imagetype
-                print 'Missing %s calibration file. Available:'%imagetype
+                print('Missing %s calibration file. Available:'%imagetype)
                 for k, v in dates.iteritems():
-                    print k, len(v) # len is both blue and red!
+                    print(k, len(v)) # len is both blue and red!
                     #~ filenames=v[date]
 
                 print
@@ -647,9 +647,9 @@ def propose_missing_calib_files(mode=None, calstat=None):
                 if imagetype=='BIAS': # zero instead of bias
                     try:
                         dates=c['ZERO'] # dates available for this particular imagetype
-                        print 'Missing %s calibration file. Available:'%imagetype
+                        print('Missing %s calibration file. Available:'%imagetype)
                         for k, v in dates.iteritems():
-                            print k, len(v) # len is both blue and red!
+                            print(k, len(v)) # len is both blue and red!
                             #~ filenames=v[date]
 
                         print
@@ -675,7 +675,7 @@ def include_missing_calib_files(mode=None, calstat=None, camera=None):
         return False
     
     # What calib files are missing?
-    for imagetype, status in calstat.iteritems():
+    for imagetype, status in calstat.items():
         if imagetype not in selected_cal_dates:
             continue
         else:
@@ -706,10 +706,10 @@ def include_missing_calib_files(mode=None, calstat=None, camera=None):
                 # Delete path. It is added later in the reduction code
                 filenames = [x.split('/')[-1].replace('.fits', '') for x in filenames]
                 
-                print 'Adding %d %s images:'%(len(filenames), imagetype)
+                print('Adding %d %s images:'%(len(filenames), imagetype))
                 result[imagetype]=filenames
                 for x in filenames:
-                    print x
+                    print(x)
                 print
             except:
                 if imagetype=='BIAS': # zero instead of bias
@@ -725,10 +725,10 @@ def include_missing_calib_files(mode=None, calstat=None, camera=None):
 
                         filenames = [x.split('/')[-1].replace('.fits', '') for x in filenames]
 
-                        print 'Adding %d %s images:'%(len(filenames), imagetype)
+                        print('Adding %d %s images:'%(len(filenames), imagetype))
                         result[imagetype]=filenames
                         for x in filenames:
-                            print x
+                            print(x)
                         print
                     except:
                         print('*** NO %s AVAILABLE FOR THIS MODE!!!'%imagetype)
@@ -776,7 +776,7 @@ if __name__ == '__main__':
     modes = find_all_modes()
     
     m=0
-    for mode, v in modes.iteritems():
+    for mode, v in modes.items():
         blue_obs, red_obs, obs_date = find_filenames_for_a_mode(v)
     
     #~ blue_obs, red_obs, obs_date = find_filenames()
@@ -809,9 +809,9 @@ if __name__ == '__main__':
         if len(science)>0:
             print
             print
-            print '########################################################'
-            print 'Mode', mode
-            print '########################################################'
+            print('########################################################')
+            print('Mode', mode)
+            print('########################################################')
 
 
             print('#'+54*'-')
@@ -834,7 +834,7 @@ if __name__ == '__main__':
         
         # Update array with missing data
         missing_cal = include_missing_calib_files(mode=mode, calstat=calstat, camera=camera)
-        for imagetype, filenames in missing_cal.iteritems():
+        for imagetype, filenames in missing_cal.items():
             if imagetype=='BIAS':
                 bias=filenames
                 print('new biases'), bias
