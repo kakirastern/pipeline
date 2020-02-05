@@ -11,7 +11,7 @@ import mpfit
 import optical_model as om
 import math
 import mpfit
-import multiprocessing
+#import multiprocessing
 from itertools import cycle
 from wifes_metadata import __version__
 import scipy.optimize as op
@@ -109,7 +109,7 @@ def associate_linelists(all_found_lines, # len NF
                         y_array = None,  # len NF
                         dlam_cut = 100.0):
     # should only be operated on a single row of data at a time!
-    if y_array == None:
+    if y_array.any() == None:
         y_array = numpy.ones(len(all_found_lines))
     ylist = numpy.unique(y_array)
     nr = len(ref_lines)
@@ -156,7 +156,7 @@ def gauss_line_resid(p,x,y, gain=None, rnoise=10.0):
     else:
         return np.sqrt(numpy.maximum(y,0) + rnoise**2)
 
-def lsq_gauss_line( args ):
+def lsq_gauss_line(args):
     """
     Fit a Gaussian to data y(x)
     
@@ -172,8 +172,7 @@ def lsq_gauss_line( args ):
     guess_center: float
         initial guess position
     """
-    fit = op.least_squares(gauss_line_resid, [numpy.max(args[4]), args[1], args[2]], method='lm', \
-            xtol=1e-04, ftol=1e-4, f_scale=[3.,1.,1.], args=(args[3], args[4]))
+    fit = op.least_squares(gauss_line_resid, [numpy.max(args[4]), args[1], args[2]], method='lm', xtol=1e-04, ftol=1e-4, f_scale=[3.,1.,1.], args=(args[3], args[4]))
     #Look for unphysical solutions
     if (fit.x[2]<0.5) or (fit.x[2]>10) or (fit.x[1]<args[3][0]) or (fit.x[1]>args[3][-1]): 
         return args[0], float('nan'), 0., fit.x[2], 0.
@@ -192,7 +191,7 @@ def scipy_gauss_line(nline, guess_center, width_guess, xfit, yfit):
     """
     return None
 
-def mpfit_gauss_line( packaged_args ):
+def mpfit_gauss_line(packaged_args):
     (nline, guess_center, width_guess, xfit, yfit) = packaged_args
     # choose x,y subregions for this line
     fa = {'x':xfit, 'y':yfit}
@@ -206,22 +205,21 @@ def mpfit_gauss_line( packaged_args ):
                 'limited':[1,1], 'limits':[width_guess/20.,width_guess]},
                ]
 
-    my_fit = mpfit.mpfit(err_gauss_line,functkw=fa, parinfo=parinfo, 
-                             quiet=True)
+    my_fit = mpfit.mpfit(err_gauss_line,functkw=fa, parinfo=parinfo, quiet=True)
     p1 = my_fit.params
     #print p1, my_fit.status
 
     # plot for check purposes
-    '''
-    print my_fit.params, my_fit.status
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(xfit,yfit,'ko-')
-    plt.plot(xfit, gauss_line(my_fit.params,xfit),'ro-')
-    plt.axvline(my_fit.params[1],c='g')
-    plt.axvline(guess_center,c='b',linestyle='--')
-    plt.show()
-    '''
+    
+#    print(my_fit.params, my_fit.status)
+#    import matplotlib.pyplot as plt
+#    plt.figure()
+#    plt.plot(xfit,yfit,'ko-')
+#    plt.plot(xfit, gauss_line(my_fit.params,xfit),'ro-')
+#    plt.axvline(my_fit.params[1],c='g')
+#    plt.axvline(guess_center,c='b',linestyle='--')
+#    plt.show()
+    
     if p1[2] == parinfo[2]['limits'][1]:
         # Hum ... line too wide = problem
         return[nline,float('nan')]
@@ -233,7 +231,7 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
                               peak_centers,
                               width_guess,
                               find_method = 'mpfit',
-                              multithread = True): 
+                              multithread = False):
     N = len(subbed_arc_data)
     x = numpy.arange(N,dtype='d')
     y = subbed_arc_data
@@ -261,7 +259,12 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
             weights = yfit[good_pix]
             A_mat = numpy.transpose(numpy.transpose(P)*(weights**2))
             B_mat = numpy.log(yfit[good_pix])*(weights**2)
-            results = numpy.linalg.lstsq(A_mat, B_mat)
+            results = numpy.linalg.lstsq(A_mat, B_mat, rcond=-1)
+            
+            # FutureWarning: `rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.
+            # To use the future default and silence this warning we advise to pass `rcond=None`, to keep using the old, explicitly pass `rcond=-1`.
+            # results = numpy.linalg.lstsq(A_mat, B_mat)
+
             # fit parabola to log of flux
             A, B, C = results[0]
             #print 2.0*numpy.sqrt(2.0*numpy.log(2.0)*(-2.0*A)**-1)
@@ -277,10 +280,11 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
         # Do an mpfit with gaussian function instead (can limit width!)
         # Use multicore to speed things up
         # Mike I : change in a minimal way to use scipy least squares.
-        if multithread :
-            cpu = None
-        else :
-            cpu = 1 
+#        if multithread:
+#            cpu = None
+#        else :
+#            cpu = 1
+        cpu = 1
         # list the jobs
         jobs = []
         fitted_centers = numpy.zeros_like(peak_centers, dtype = numpy.float)
@@ -295,49 +299,56 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
             except:
                 fitted_centers[i] = float('nan')
                 continue
-            jobs.append( (i,curr_ctr_guess, width_guess, xfit, yfit) )
+            jobs.append((i,curr_ctr_guess, width_guess, xfit, yfit))
         if len(jobs)>0:
             # Do the threading (see below and http://stackoverflow.com/a/3843313)
             # MJI: with the following test, the code ran faster, but even just the Pool(cpu)
             # command slowed things down. 
-            #jobs2 = [jobs[:len(jobs)//4], jobs[len(jobs)//4:2*len(jobs)//4],jobs[2*len(jobs)//4:3*len(jobs)//4],jobs[3*len(jobs)//4:]]
-            #results = mypool.imap_unordered(utils.lsq_gauss_line,jobs2)
-            if multithread: 
-                with multiprocessing.Pool(cpu) as mypool:
-                    #start = datetime.datetime.now() #!!! MJI
-                    if find_method =='mpfit':
-                        results = mypool.imap_unordered(mpfit_gauss_line,jobs)
+            jobs2 = [jobs[:len(jobs)//4], jobs[len(jobs)//4:2*len(jobs)//4],jobs[2*len(jobs)//4:3*len(jobs)//4],jobs[3*len(jobs)//4:]]
+#            results = mypool.imap_unordered(utils.lsq_gauss_line,jobs2)
+            results = []
+            for job in jobs:
+                print('job', job)
+                result = lsq_gauss_line(job)
+                results.append(result)
+            print('Only 1 cpu is used and multiprocessing is avoided...')
+#            if multithread:
+#                with multiprocessing.Pool(cpu) as mypool:
+#                    #start = datetime.datetime.now() #!!! MJI
+#                    if find_method =='mpfit':
+#                        results = mypool.imap_unordered(mpfit_gauss_line,jobs)
+#                    else:
+#                        results = mypool.imap_unordered(lsq_gauss_line,jobs)
+#
+#                    # Close off the pool now that we're done with it
+#                    # !!!MJI Not needed with the "with" command. The iterator below
+#                    # waits for completion.
+#                    #mypool.close()
+#                    #mypool.join()
+#                    # Process the results
+#                    for r in results:
+#                        #for r in rr:
+#                        try:
+#                            this_line = r[0]
+#                            this_center = r[1]
+#                        except:
+#                            continue
+#                        fitted_centers[this_line] = float(this_center)
+#                pass
+                    #print(' core done in',datetime.datetime.now()-start)
+#            else:
+            start = datetime.datetime.now() #!!! MJI
+            for i in range(narc):
+                if find_method =='mpfit':
+                    # If sentence added by MZ
+                    #~ print('FITTED CENTERS', len(fitted_centers))
+                    if i<len(jobs):
+                        fitted_centers[i] = mpfit_gauss_line(jobs[i])[1]
                     else:
-                        results = mypool.imap_unordered(lsq_gauss_line,jobs)
-                        
-                    # Close off the pool now that we're done with it
-                    # !!!MJI Not needed with the "with" command. The iterator below
-                    # waits for completion.
-                    #mypool.close()
-                    #mypool.join()            
-                    # Process the results
-                    for r in results:
-                        #for r in rr:
-                        try:
-                            this_line = r[0]
-                            this_center = r[1]
-                        except:
-                            continue
-                        fitted_centers[this_line] = float(this_center)
-                    #print('  core done in',datetime.datetime.now()-start)
-            else:
-                start = datetime.datetime.now() #!!! MJI
-                for i in range(narc):
-                    if find_method =='mpfit':
-                        # If sentence added by MZ
-                        #~ print('FITTED CENTERS', len(fitted_centers))
-                        if i<len(jobs):
-                            fitted_centers[i] = mpfit_gauss_line(jobs[i])[1]
-                        else:
-                            pass
-                    else:
-                        fitted_centers[i] = lsq_gauss_line(jobs[i])[1]
-                #print('  serial core done in',datetime.datetime.now()-start)
+                        pass
+                else:
+                    fitted_centers[i] = lsq_gauss_line(jobs[i])[1]
+                print(' serial core done in',datetime.datetime.now()-start)
 
     if find_method == 'loggauss':
         return numpy.array(fitted_centers)
@@ -351,7 +362,7 @@ def quick_arcline_fit(arc_data,
                       width_guess=2.0,
                       flux_saturation = 50000.0,
                       prev_centers = None, # Fred's update (wsol)
-                      multithread=False #!!!MJI. See comments above.
+                      multithread = False #!!!MJI. See comments above.
                       ):
     N = len(arc_data)
     arc_deriv = arc_data[1:]-arc_data[:-1]
@@ -419,7 +430,7 @@ def quick_arcline_fit(arc_data,
                                           potential_line_inds,
                                           width_guess,
                                           find_method=find_method,
-                                          multithread=multithread)
+                                          multithread=False)
     next_peak_list = []
     for x in next_ctrs:
         if x == x:
@@ -468,7 +479,7 @@ def find_lines_and_guess_refs(slitlet_data,
                               yzp=0,
                               flux_threshold_nsig=3.0,
                               deriv_threshold_nsig=1.0,
-                              multithread = True,
+                              multithread = False,
                               plot=False):
     #-----------------------------------
     # get arclines
@@ -519,7 +530,7 @@ def find_lines_and_guess_refs(slitlet_data,
                                             flux_threshold = flux_threshold,
                                             deriv_threshold = deriv_threshold,
                                             width_guess=2.0,
-                                            multithread=multithread)
+                                            multithread=False)
     else :
         mid_fit_centers = None # don't do it for the loggauss method ...
 
@@ -556,7 +567,7 @@ def find_lines_and_guess_refs(slitlet_data,
     #---------
     # single xcorr version
     elif shift_method == 'xcorr_single':
-        mid_flux = slitlet_data[nrows/2,:]
+        mid_flux = slitlet_data[nrows//2,:]
         wave_guess = wavelength_guess(
             numpy.arange(ncols)*bin_x,
             (nrows/2)*bin_y*numpy.ones(ncols) + yzp*bin_y,
@@ -635,29 +646,35 @@ def find_lines_and_guess_refs(slitlet_data,
         # Gain some ~6.3 sec per slice by doing this !
         mid_row = numpy.int(nrows/2)
         mid_row_ind = (init_y_array == mid_row)
-        best_stretch = xcorr_shift_all( (chosen_slitlet, 
+        best_stretch = xcorr_shift_all(chosen_slitlet,
                                        mid_row,ncols,mid_row_ind,
                                        init_x_array[mid_row_ind],
-                                       ref_arc,None, True,
-                                       verbose) )
+                                       ref_arc, None, True,
+                                       verbose)
         jobs = []
         for i in range(nrows):
             row_inds = (init_y_array == i+1)
             # only use rows where enough lines are found
             if len(init_x_array[row_inds]) >= 0.5*len(ref_arc[:,0]):    
-                jobs.append( (chosen_slitlet,i,ncols,row_inds,
+                jobs.append((chosen_slitlet,i,ncols,row_inds,
                               init_x_array[row_inds],ref_arc, 
-                              [best_stretch], False, verbose) )
-        if multithread :
-            cpu = None
-        else :
-            cpu = 1
-        if verbose :
-            print('  ... assign lambdas using up to %d cpu(s) ...' % multiprocessing.cpu_count())
-        mypool = multiprocessing.Pool(cpu)
-        results = mypool.imap_unordered(xcorr_shift_all,jobs)
-        mypool.close()
-        mypool.join()
+                              [best_stretch], False, verbose))
+#        if multithread:
+#            cpu = None
+#        else :
+#            cpu = 1
+        cpu = 1
+#        if verbose :
+#            print('  ... assign lambdas using up to %d cpu(s) ...' % multiprocessing.cpu_count())
+#            mypool = multiprocessing.Pool(cpu)
+#            results = mypool.imap_unordered(xcorr_shift_all,jobs)
+#            mypool.close()
+#            mypool.join()
+        results = []
+        for job in jobs:
+            result = xcorr_shift_all(*job)
+            results.append(result)
+        print('Only 1 cpu is used and multiprocessing is avoided...')
 
         # All done ! Now, let's collect the results ...
         # Careful, the order may be random ... !
@@ -843,11 +860,14 @@ def xcorr_shift_grid(slitlet_data,
 
 # Fred's update (wsol)
 
-def xcorr_shift_all( packaged_args ):
-    (slitlet_data, this_row, ncols, row_inds, this_init_x_array, this_ref_arc, \
-    stretches, # if provided, will only try these ones !
-    get_stretch, # if yes, get the best stretch+exit
-    verbose ) = packaged_args
+def xcorr_shift_all(slitlet_data, this_row, ncols, row_inds, this_init_x_array, this_ref_arc, stretches, get_stretch, verbose):
+
+#def xcorr_shift_all(packaged_args):
+#    (slitlet_data, this_row, ncols, row_inds, this_init_x_array, this_ref_arc, stretches,
+#    if provided, will only try these ones !
+#    get_stretch,
+#    if yes, get the best stretch+exit
+#    verbose) = packaged_args
 
     if stretches == None:
         stretches = numpy.arange(0.98,1.03,0.001)
@@ -1556,7 +1576,7 @@ def derive_wifes_optical_wave_solution(inimg,
                                        doplot=False,
                                        savefigs=False,
                                        save_prefix='wsol_',
-                                       multithread=True):
+                                       multithread=False):
   """ The main user-callable function that performs the fit"""
   #------------------------------------------------------
   # *** Mike's edits: operate on PyWiFeS MEF files ***
@@ -1632,7 +1652,7 @@ def derive_wifes_optical_wave_solution(inimg,
           verbose=verbose,
           flux_threshold_nsig=flux_threshold_nsig,
           deriv_threshold_nsig=1.0,
-          multithread=multithread,
+          multithread=False,
           plot=step1plot)
       nl = len(new_x)
       found_x_lists.append(new_x)

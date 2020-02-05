@@ -2,7 +2,7 @@
 
 """
 Example:
-python reduce_red_data_python3.py config.py /priv/mulga1/marusa/2m3data/20190302
+python reduce_marusa.py configRed.py /priv/mulga1/marusa/2m3data/20190302
 """
 
 import sys
@@ -14,7 +14,10 @@ import gc
 import datetime
 import warnings
 import numpy as np
-import imp
+#import imp
+import importlib.machinery
+import types
+
 #~ from importlib import reload
 
 #~ import calibration_filenames_date as cal
@@ -26,9 +29,14 @@ start_time = datetime.datetime.now()
 
 # Config
 config_name=sys.argv[1]
-config = imp.load_source(config_name.replace('.py', ''), config_name)
-reload(config)
+#config = imp.load_source(config_name.replace('.py', ''), config_name)
+#reload(config)
+loader = importlib.machinery.SourceFileLoader(config_name.replace('.py', ''), config_name)
+config = types.ModuleType(loader.name)
+loader.exec_module(config)
 #~ metadata=config.reduce_metadata
+
+print('config', dir(config))
 
 # This is not so simple as output folder is not the same
 # What is this?
@@ -39,25 +47,24 @@ prefix=config.prefix
 obsdate = sys.argv[2]
 
 # Input folder with raw data
-data_dir = os.path.join(config.input_root, obsdate) #sys.argv[2]
-
+data_dir = os.path.join(config.output_root, obsdate) #sys.argv[2]
 
 # Output folder (should already exist and metadata should be there)
 
 ###### OUTPUT FOLDER ################
 # Get obsdate
-#~ path = sys.argv[2]
-#~ obsdate = path.split('/')[-1]
-#~ if len(obsdate)<2: # in case path ends with /
-    #~ obsdate = path.split('/')[-2] # Hope that works
+path = sys.argv[2]
+obsdate = path.split('/')[-1]
+if len(obsdate)<2: # in case path ends with /
+    obsdate = path.split('/')[-2] # Hope that works
 print('OBSDATE', obsdate)
 
 root_obsdate = os.path.join(config.output_root, '%s'%obsdate)
 
 # Create folder with date
 root_bool = os.path.isdir(root_obsdate) and os.path.exists(root_obsdate)
-print 'ROOT_BOOL', root_obsdate, os.path.isdir(root_obsdate), os.path.exists(root_obsdate)
-print 'TEST', os.path.isdir('/data/mash/marusa/reduction_wifes/pipeline/reduction_scripts/'), os.path.exists('/data/mash/marusa/reduction_wifes/pipeline/reduction_scripts/')
+print('ROOT_BOOL', root_obsdate, os.path.isdir(root_obsdate), os.path.exists(root_obsdate))
+print('TEST', os.path.isdir('/Users/krisstern/pipeline/reduction_scripts/'), os.path.exists('/Users/krisstern/pipeline/reduction_scripts/'))
 if not root_bool:
     os.mkdir(root_obsdate)
 print('root_obsdate', root_obsdate)
@@ -66,7 +73,7 @@ print('root_obsdate', root_obsdate)
 out_dir = os.path.join(root_obsdate, 'reduced_%s'%config.band)
 
 if prefix is not None and len(prefix)>0:
-    print ('prefix')
+    print('prefix')
     out_dir= out_dir + '_%s'%prefix
 out_dir_bool = os.path.isdir(out_dir) and os.path.exists(out_dir)
 if not out_dir_bool:
@@ -108,62 +115,72 @@ else:
     elif config.band == 'b':
         metadata_filename=os.path.join(out_dir, 'metadata_WiFeSBlue.py')
 print('metadata_filename', metadata_filename, config.metadata_filename)
-obs_metadata = imp.load_source('obs_metadata', metadata_filename).night_data
+
+loader = importlib.machinery.SourceFileLoader('obs_metadata', metadata_filename)
+obs_metadata = types.ModuleType(loader.name)
+loader.exec_module(obs_metadata)
+
+print('obs_metadata', dir(obs_metadata))
+
+obs_metadata = obs_metadata.night_data
+
+#obs_metadata = imp.load_source('obs_metadata', metadata_filename).night_data
 #~ mode = imp.load_source('obs_metadata', metadata_filename).mode
 
 # Some WiFeS specific things
 my_data_hdu=0
 
 # SET MULTITHREAD ?
+# Multithreading does not work with macOS Catalina
 multithread=config.multithread
+
+print('multithread', config.multithread)
 
 # SET SKIP ALREADY DONE FILES ?
 skip_done=config.skip_done
 
 proc_steps = config.proc_steps
 
+print('proc_steps', proc_steps)
 
-def find_the_mode(): # delete this
-
-
-    #~ selected_cal_dates={'DARK':20190304, 'ZERO':20190302, 'FLAT': 20190304}
-    selected_cal_dates={'DARK':20190304}
-
-    # Calibrations
-    try:
-        c=cal[mode]    
-    except:
-        c=None
-
-    for kk, vv in selected_cal_dates.iteritems(): # For imagetype kk, dict of dates vv
-        t=c[kk]
-        d=t[vv]
-        print kk
-        for x in d:
-            print 'copy', x, os.path.join(root, x.split('/')[-1])#, x, root
-            copyfile(x, os.path.join(root, x.split('/')[-1]))
-        print
-    print
-    print
-    print
-
-
-
-
-    if c:
-        print '#----------------------------------------------------'
-        print 'Available calibrations:'
-        for kk, vv in c.iteritems():
-            print kk
-            for kkk, vvv in vv.iteritems():
-                print kkk, len(vvv)
-            print
-
-    print
-    print
-    print '#########################################################'
-    #~ print
-    #~ print
+#def find_the_mode(): # delete this
+#
+#
+#    #~ selected_cal_dates={'DARK':20190304, 'ZERO':20190302, 'FLAT': 20190304}
+#    selected_cal_dates={'DARK':20190304}
+#
+#    # Calibrations
+#    try:
+#        c=cal[mode]
+#    except:
+#        c=None
+#
+#    for kk, vv in selected_cal_dates.iteritems(): # For imagetype kk, dict of dates vv
+#        t=c[kk]
+#        d=t[vv]
+#        print(kk)
+#        for x in d:
+#            print('copy', x, os.path.join(root, x.split('/')[-1]))#, x, root
+#            copyfile(x, os.path.join(root, x.split('/')[-1]))
+#        print
+#    print
+#    print
+#    print
+#
+#    if c:
+#        print('#----------------------------------------------------')
+#        print('Available calibrations:')
+#        for kk, vv in c.items():
+#            print(kk)
+#            for kkk, vvv in vv.iteritems():
+#                print(kkk, len(vvv))
+#            print('')
+#
+#    print('')
+#    print('')
+#    print('#########################################################')
+#    #~ print
+#    #~ print
 
 
 
@@ -935,8 +952,7 @@ def run_save_3dcube(metadata, prev_suffix, curr_suffix, **args):
         in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
         out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         print('Saving 3D Data Cube for %s' % in_fn.split('/')[-1])
-        pywifes.generate_wifes_3dcube(
-            in_fn, out_fn, **args)
+        pywifes.generate_wifes_3dcube(in_fn, out_fn, **args)
     return
 
 #------------------------------------------------------------------------

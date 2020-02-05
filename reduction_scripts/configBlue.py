@@ -15,10 +15,10 @@ import sys
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
 #input_root = '/priv/mulga1/marusa/2m3data/wifes/'
-input_root = '/data/mash/marusa/2m3data/wifes/'
+input_root = '/Users/krisstern/pipeline/reduction_scripts/'
 #input_root = "/priv/mulga2/arains/ys/wifes/raw/"
 #output_root = '/priv/mulga1/marusa/2m3reduced/wifes/'
-output_root = '/data/mash/marusa/2m3reduced/wifes/'
+output_root = '/Users/krisstern/pipeline/reduction_scripts/'
 #output_root = "/priv/mulga2/arains/ys/wifes/reduced/"
 
 # Do you want to reduce only specific objects? Names must match those in the fits file headers (OBJNAME).
@@ -32,7 +32,7 @@ naxis2=None #2056 # False # 2056 for PDS 70
 # Save to folders with this prefix
 prefix='ys' # None
 if prefix is not None:
-    print 'PREFIX', prefix
+    print('PREFIX', prefix)
 
 # This thing with metadata_filename is actually not used yet.
 if prefix is not None and len(prefix)>0:

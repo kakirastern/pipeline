@@ -2,7 +2,7 @@
 
 """
 Example:
-python generate_metadata_script_marusa.py config.py /priv/mulga1/marusa/2m3data/20190114
+python generate_metadata_script_marusa.py configRed.py /priv/mulga1/marusa/2m3data/20190114
 """
 
 import numpy as np
@@ -106,7 +106,7 @@ print('root_obsdate', root_obsdate)
 out_dir = os.path.join(root_obsdate, 'reduced_%s'%config.band)
 
 if prefix is not None and len(prefix)>0:
-    print ('prefix', prefix)
+    print('prefix', prefix)
     out_dir += '_%s'%prefix
 out_dir_bool = os.path.isdir(out_dir) and os.path.exists(out_dir)
 if not out_dir_bool:

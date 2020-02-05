@@ -27,16 +27,17 @@ f1.close()
 # Where is everything ?
 # New in 0.7.x: get the project directory from the file location !
 proj_dir = os.path.dirname(__file__)
-data_dir = os.path.join(proj_dir,'raw_data/')
-out_dir  = os.path.join(proj_dir,'reduc_r/') # You need to create this folder prior to running this script.
-calib_prefix = os.path.join(out_dir,'wifesR_20150314')
+print('proj_dir', proj_dir)
+data_dir = os.path.join(proj_dir,'/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/')
+out_dir  = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_r/') # You need to create this folder prior to running this script.
+calib_prefix = os.path.join(out_dir,'wifesR_0919/')
 
 # Some WiFeS specific things
 my_data_hdu=0
 
 # SET MULTITHREAD ?
 #~ multithread=False
-multithread=True # THIS DOESN'T WORK WITH PYTHON 2.7
+multithread=False # THIS DOESN'T WORK WITH PYTHON 2.7 or with macOS Catalina
 
 # SET SKIP ALREADY DONE FILES ?
 skip_done=False
@@ -93,7 +94,7 @@ proc_steps = [
              'shift_method' : 'xcorr_all',
              'find_method' : 'mpfit',
              'dlam_cut_start':5.0,
-             'multithread': multithread}},
+             'multithread': False}},
     {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution
     {'step':'flat_response'  , 'run':True, 'suffix':None,
      #~ 'args':{'mode':'all'}},
@@ -101,7 +102,7 @@ proc_steps = [
     #------------------
     {'step':'cosmic_rays'    , 'run':True, 'suffix':'04',
      'args':{'ns':False, 
-             'multithread':multithread}},
+             'multithread': False}},
     #------------------
     {'step':'sky_sub'        , 'run':True, 'suffix':'05',
      'args':{'ns':False}},
@@ -112,7 +113,7 @@ proc_steps = [
     {'step':'flatfield'      , 'run':True, 'suffix':'07', 'args':{}},
     #------------------
     {'step':'cube_gen'       , 'run':True, 'suffix':'08',
-     'args':{'multithread':multithread,
+     'args':{'multithread': False,
              'adr':True,
              #'dw_set':0.44,
              'wmin_set':5400.0,
@@ -481,8 +482,7 @@ def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
     wsol_in_fn  = '%s%s.p%s.fits' % (out_dir, metadata['arc'][0],
                                      prev_suffix)
     print('Deriving master wavelength solution from %s' % wsol_in_fn.split('/')[-1])
-    pywifes.derive_wifes_wave_solution(wsol_in_fn, wsol_out_fn,
-                                       **args)
+    pywifes.derive_wifes_wave_solution(wsol_in_fn, wsol_out_fn, **args)
     # local wave solutions for science or standards
     sci_obs_list  = get_sci_obs_list(metadata)
     std_obs_list  = get_std_obs_list(metadata)
@@ -502,8 +502,7 @@ def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
                 if os.path.isfile(local_wsol_out_fn):
                     continue
                 print('Deriving local wavelength solution for %s' % local_arcs[i])
-                pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn,
-                                                    **args)
+                pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn, **args)
     return
 
 #------------------------------------------------------
@@ -534,8 +533,7 @@ def run_wire_soln(metadata, prev_suffix, curr_suffix):
 
 #------------------------------------------------------
 # Cosmic Rays
-def run_cosmic_rays(metadata, prev_suffix, curr_suffix,
-                    ns=False, multithread=False):
+def run_cosmic_rays(metadata, prev_suffix, curr_suffix, ns=False, multithread=False):
     from lacosmic import lacos_wifes
     # now run ONLY ON SCIENCE TARGETS AND STANDARDS
     sci_obs_list  = get_sci_obs_list(metadata)
@@ -550,14 +548,14 @@ def run_cosmic_rays(metadata, prev_suffix, curr_suffix,
         #    continue
         lacos_wifes(in_fn, out_fn, wsol_fn=wsol_out_fn, niter=3,
                     sig_clip=10.0, obj_lim=10.0, sig_frac=0.2,
-                    multithread=multithread)
+                    multithread=False)
         if ns:
             in_fn  = '%s%s.s%s.fits' % (out_dir, fn, prev_suffix)
             out_fn = '%s%s.s%s.fits' % (out_dir, fn, curr_suffix)
             print('Cleaning cosmics in %s' % in_fn.split('/')[-1])
             lacos_wifes(in_fn, out_fn, wsol_fn=wsol_out_fn, niter=3,
                         sig_clip=10.0, obj_lim=10.0, sig_frac=0.2,
-                        multithread=multithread)
+                        multithread=False)
         gc.collect()
     for fn in std_obs_list:
         in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
@@ -566,7 +564,7 @@ def run_cosmic_rays(metadata, prev_suffix, curr_suffix,
         #lacos_wifes(in_fn, out_fn, niter=1, sig_frac=2.0)
         lacos_wifes(in_fn, out_fn, wsol_fn=wsol_out_fn, niter=3,
                     sig_clip=10.0, obj_lim=10.0, sig_frac=0.2,
-                    multithread=multithread)
+                    multithread=False)
         if ns:
             in_fn  = '%s%s.s%s.fits' % (out_dir, fn, prev_suffix)
             out_fn = '%s%s.s%s.fits' % (out_dir, fn, curr_suffix)
@@ -574,7 +572,7 @@ def run_cosmic_rays(metadata, prev_suffix, curr_suffix,
             #lacos_wifes(in_fn, out_fn, niter=1, sig_frac=2.0)
             lacos_wifes(in_fn, out_fn, wsol_fn=wsol_out_fn, niter=3,
                         sig_clip=10.0, obj_lim=10.0, sig_frac=0.2,
-                        multithread=multithread)
+                        multithread=False)
         gc.collect()
     return
 
@@ -798,8 +796,10 @@ def run_extract_stars(metadata, prev_suffix, curr_suffix, type='all',**args):
     std_obs_list = get_primary_std_obs_list(metadata, type=type)
     #print std_obs_list
     for fn in std_obs_list:
-        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
-        out_fn = '%s%s.x%s.dat'  % (out_dir, fn, prev_suffix)
+#        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#        out_fn = '%s%s.x%s.dat'  % (out_dir, fn, prev_suffix)
+        in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
+        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         print('Extract %s standard star from %s' % (type, in_fn.split('/')[-1]))
         pywifes.extract_wifes_stdstar(in_fn,
                                       save_fn=out_fn,
@@ -810,9 +810,13 @@ def run_extract_stars(metadata, prev_suffix, curr_suffix, type='all',**args):
 # Sensitivity Function fit
 def run_derive_calib(metadata, prev_suffix, curr_suffix, method = 'poly',**args):
     std_obs_list = get_primary_std_obs_list(metadata, type='flux')
-    std_cube_list = ['%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#    std_cube_list = ['%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#                     for fn in std_obs_list]
+#    extract_list = ['%s%s.x%s.dat' % (out_dir, fn, prev_suffix)
+#                    for fn in std_obs_list]
+    std_cube_list = [os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
                      for fn in std_obs_list]
-    extract_list = ['%s%s.x%s.dat' % (out_dir, fn, prev_suffix)
+    extract_list = [os.path.join(out_dir, '%s.x%s.dat' % (fn, prev_suffix))
                     for fn in std_obs_list]
     print('Deriving sensitivity function')
     best_calib = pywifes.derive_wifes_calibration(
@@ -829,8 +833,10 @@ def run_flux_calib(metadata, prev_suffix, curr_suffix,
     sci_obs_list = get_primary_sci_obs_list(metadata)
     std_obs_list = get_primary_std_obs_list(metadata)
     for fn in sci_obs_list+std_obs_list:
-        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
-        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+#        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+        in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
+        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         print('Flux-calibrating cube %s' % in_fn.split('/')[-1])
         pywifes.calibrate_wifes_cube(
             in_fn, out_fn, calib_fn, mode)
@@ -840,9 +846,13 @@ def run_flux_calib(metadata, prev_suffix, curr_suffix,
 # Telluric - derive
 def run_derive_telluric(metadata, prev_suffix, curr_suffix, **args):
     std_obs_list = get_primary_std_obs_list(metadata, 'telluric')
-    std_cube_list = ['%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#    std_cube_list = ['%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#                     for fn in std_obs_list]
+#    extract_list = ['%s%s.x%s.dat' % (out_dir, fn, prev_suffix)
+#                    for fn in std_obs_list]
+    std_cube_list = [os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
                      for fn in std_obs_list]
-    extract_list = ['%s%s.x%s.dat' % (out_dir, fn, prev_suffix)
+    extract_list = [os.path.join(out_dir, '%s.x%s.dat' % (fn, prev_suffix))
                     for fn in std_obs_list]
     print('Deriving telluric correction')
     pywifes.derive_wifes_telluric(std_cube_list,
@@ -857,8 +867,10 @@ def run_telluric_corr(metadata, prev_suffix, curr_suffix, **args):
     sci_obs_list = get_primary_sci_obs_list(metadata)
     std_obs_list = get_primary_std_obs_list(metadata)
     for fn in sci_obs_list+std_obs_list:
-        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
-        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+#        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+        in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
+        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         print('Correcting telluric in %s' % in_fn.split('/')[-1])
         pywifes.apply_wifes_telluric(
             in_fn, out_fn, tellcorr_fn)
@@ -870,8 +882,10 @@ def run_save_3dcube(metadata, prev_suffix, curr_suffix, **args):
     # now generate cubes
     sci_obs_list = get_primary_sci_obs_list(metadata)
     for fn in sci_obs_list:
-        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
-        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+#        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
+#        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+        in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
+        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         print('Saving 3D Data Cube for %s' % in_fn.split('/')[-1])
         pywifes.generate_wifes_3dcube(
             in_fn, out_fn, **args)
