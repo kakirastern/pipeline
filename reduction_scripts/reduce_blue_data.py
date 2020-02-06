@@ -34,8 +34,8 @@ my_data_hdu=0
 multithread=False # Set to false for working with macOS Catalina
 
 # SET SKIP ALREADY DONE FILES ?
-skip_done=False
-#skip_done=True
+#skip_done=False
+skip_done=True
 
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
@@ -53,7 +53,7 @@ proc_steps = [
              'verbose':False}},
     {'step':'bias_sub'       , 'run':True, 'suffix':'02',
      'args':{'method':'subtract', 
-             'plot':True, 
+             'plot':True,
              'verbose':False}},
     #------------------
     {'step':'superflat'      , 'run':True, 'suffix':None,
@@ -127,11 +127,11 @@ proc_steps = [
      'args':{'ytrim':4, 
              'type':'flux'}},
     {'step':'derive_calib'   , 'run':True, 'suffix':None,
-     'args':{'plot_stars':True,
+     'args':{'plot_stars':False,
              'plot_sensf':True,
              'polydeg':25,
-             'excise_cut' : 0.005,
-             'method':'poly',# 'poly' or 'smooth_SG'
+#             'excise_cut' : 0.005,
+             'method':'smooth_SG',# 'poly' or 'smooth_SG'
              'boxcar':10, # smoothing for smooth_SG only
              'norm_stars':True}},
     {'step':'flux_calib'     , 'run':True, 'suffix':'10', 'args':{}},
@@ -503,8 +503,7 @@ def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
                 if os.path.isfile(local_wsol_out_fn):
                     continue
                 print('Deriving local wavelength solution for %s' % local_arcs[i])
-                pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn,
-                                                    **args)
+                pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn, **args)
     return
 
 #------------------------------------------------------
