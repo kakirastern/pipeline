@@ -7,12 +7,13 @@ import scipy.interpolate
 import wifes_ephemeris
 from wifes_metadata import metadata_dir
 from wifes_metadata import __version__
+import re
 
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
 # reference star information!
 stdstar_fn = os.path.join(metadata_dir,'stdstar_lookup_table.dat')
-f1 = open(stdstar_fn, 'r')
+f1 = open(stdstar_fn, 'rb')
 stdstar_lines = f1.readlines()[1:]
 f1.close()
 
@@ -419,10 +420,11 @@ def derive_wifes_calibration(cube_fn_list,
                                                     fill_value=numpy.nan)
     # first extract stdstar spectra and compare to reference
     fratio_results = []
-    print("cube_fn_list =" + repr(cube_fn_list))
+    print("cube_fn_list = " + repr(cube_fn_list))
     for i in range(len(cube_fn_list)):
         f = pyfits.open(cube_fn_list[i])
         cube_hdr = f[1].header
+#        print('cube_hdr', cube_hdr)
         f.close()
         #------------------------------------
         # figure out which star it is
@@ -436,33 +438,68 @@ def derive_wifes_calibration(cube_fn_list,
                 star_name = None
         else:
             star_name = None
+#        print('star_name', star_name)
         # try to find the nearest standard in the list
         if star_name == None:
             try:
-                star_name, dist = find_nearest_stdstar(cube_fn_list[i])
-                if dist > 200.0:
-                    star_name = None
+                star_name = cube_hdr['OBJECT']
+#                print(cube_hdr)
+#                star_name, dist = find_nearest_stdstar(cube_fn_list[i])
+#                if dist > 200.0:
+#                    star_name = None
             except:
                 # last resort: use the object name from the fits header
                 # and pray it's correct
-                star_name = cube_hdr['OBJECT']
+#                star_name = cube_hdr['OBJECT']
+#                print(cube_hdr)
+                star_name, dist = find_nearest_stdstar(cube_fn_list[i])
+                if dist > 200.0:
+                    star_name = None
         #------------------------------------
-        print("Found star " + star_name)
+        try:
+            print("Found star " + star_name)
+        except:
+            print("Star name is None.")
         if airmass_list != None:
             secz = airmass_list[i]
         else:
             try:
                 secz = cube_hdr['AIRMASS']
+#                print('secz', secz)
             except:
                 print('AIRMASS header missing for {:s}'.format(cube_fn_list[i].split('/')[-1]))
                 secz = 1.0
+        print('secz', secz) # Checked
+        
+#        print('ref_fname_list', ref_fname_list)
+
+        print('ref_fname_lookup keys', ref_fname_lookup.keys())
+        
+#        print(type(ref_fname_lookup.keys()))
+        
+        ref_fname_lookup_keys = []
+        ref_fname_lookup_values = []
+        for key, value in ref_fname_lookup.items():
+            ref_fname_lookup_key = key.decode("utf-8")
+            ref_fname_lookup_value = value.decode("utf-8")
+            print(value)
+            ref_fname_lookup_keys.append(ref_fname_lookup_key)
+            ref_fname_lookup_values.append(ref_fname_lookup_value)
+        print(ref_fname_lookup_keys)
+        print(ref_fname_lookup_values)
+
         # check if there is a calib spectrum...
         if ref_fname_list != None:
             ref_fname = ref_fname_list[i]
-        elif star_name in ref_fname_lookup.keys():
-            ref_fname = ref_fname_lookup[star_name]
+#        elif star_name in ref_fname_lookup.keys():
+        elif star_name in ref_fname_lookup_keys:
+            ref_fname = ref_fname_lookup_values[ref_fname_lookup_keys.index(star_name)]
         else:
             continue
+        
+        if ref_fname:
+            print('ref_fname', ref_fname)
+        
         # get observed data
         if extract_in_list == None:
             obs_wave, obs_flux = extract_wifes_stdstar(cube_fn_list[i],
@@ -471,10 +508,16 @@ def derive_wifes_calibration(cube_fn_list,
             ex_data = numpy.loadtxt(extract_in_list[i])
             obs_wave = ex_data[:,0]
             obs_flux = ex_data[:,1]
+            
+        print()
+            
         if wave_min == None:
             wave_min = numpy.min(obs_wave)
+        print('wave_min', wave_min) # Cannot get to here?
         if wave_max == None:
             wave_max = numpy.max(obs_wave)
+        print('wave_max', wave_max) # Cannot get to here?
+        
         # get reference data
         ref_data = numpy.loadtxt(os.path.join(ref_dir,ref_fname))
         ref_interp = scipy.interpolate.interp1d(
@@ -507,6 +550,7 @@ def derive_wifes_calibration(cube_fn_list,
                 pylab.savefig(save_fn)
     # from all comparisons, derive a calibration solution
     # EVENTUALLY WILL FIT AN EXTINCTION TERM TOO
+    print('fratio_results', fratio_results)
     if len(fratio_results) < 1:
         # Didn't find any stars - there's no point in continuing
         raise Exception('Could not find calibration data for any stars!')
@@ -674,7 +718,7 @@ def calibrate_wifes_cube(inimg, outimg,
     wave_array = wave0+dwave*numpy.arange(nlam,dtype='d')
     # calculate the flux calibration array
     if mode == 'pywifes':
-        f1 = open(calib_fn, 'r')
+        f1 = open(calib_fn, 'rb')
         calib_info = pickle.load(f1)
         f1.close()
         sort_order = calib_info['wave'].argsort()

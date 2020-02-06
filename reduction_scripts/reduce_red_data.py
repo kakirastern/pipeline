@@ -50,26 +50,26 @@ skip_done=False
 #************************************************************************
 proc_steps = [
     #------------------
-    {'step':'overscan_sub'   , 'run':True, 'suffix':'00', 'args':{}},
-    {'step':'bpm_repair'     , 'run':True, 'suffix':'01', 'args':{}},
+    {'step':'overscan_sub'   , 'run':False, 'suffix':'00', 'args':{}}, # 'run':True
+    {'step':'bpm_repair'     , 'run':False, 'suffix':'01', 'args':{}}, # 'run':True
     #------------------
-    {'step':'superbias'      , 'run':True, 'suffix':None,
+    {'step':'superbias'      , 'run':False, 'suffix':None, # 'run':True
      'args':{'method':'row_med', 
              'plot':True, 
              'verbose':False}},
-    {'step':'bias_sub'       , 'run':True, 'suffix':'02',
+    {'step':'bias_sub'       , 'run':False, 'suffix':'02', # 'run':True
      'args':{'method':'subtract', 
              'plot':False, 
              'verbose':False}},
     #------------------
-    {'step':'superflat'      , 'run':True, 'suffix':None,
+    {'step':'superflat'      , 'run':False, 'suffix':None, # 'run':True
      'args':{'source':'dome'}},
     {'step':'superflat'      , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
-    {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
+    {'step':'slitlet_profile', 'run':False, 'suffix':None, 'args':{}}, # 'run':True
     #------------------
-    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
+    {'step':'flat_cleanup'   , 'run':False, 'suffix':None, # 'run':True
      'args':{'type':['dome'], # Add 'twi' for twilight flats
              'verbose':True, 
              'plot':True,
@@ -78,15 +78,15 @@ proc_steps = [
              'radius':10.0,
              'nsig_lim':3.0}},
     #------------------
-    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':False, 'suffix':None, # 'run':True
      'args':{'source':'dome'}},
     {'step':'superflat_mef'  , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi'}},
     #------------------
-    {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
+    {'step':'slitlet_mef'    , 'run':False, 'suffix':'03', # 'run':True
      'args':{'ns':False}},
     #------------------
-    {'step':'wave_soln'      , 'run':True, 'suffix':None,
+    {'step':'wave_soln'      , 'run':False, 'suffix':None, # 'run':True
      'args':{'verbose':True,
              'method' : 'optical',
              'doalphapfit' : True,
@@ -96,23 +96,23 @@ proc_steps = [
              'dlam_cut_start':5.0,
              'multithread': False}},
     {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution
-    {'step':'flat_response'  , 'run':True, 'suffix':None,
+    {'step':'flat_response'  , 'run':False, 'suffix':None, # 'run':True
      #~ 'args':{'mode':'all'}},
      'args':{'mode':'dome'}}, # Usually twilight flats are not taken
     #------------------
-    {'step':'cosmic_rays'    , 'run':True, 'suffix':'04',
+    {'step':'cosmic_rays'    , 'run':False, 'suffix':'04', # 'run':True
      'args':{'ns':False, 
              'multithread': False}},
     #------------------
-    {'step':'sky_sub'        , 'run':True, 'suffix':'05',
+    {'step':'sky_sub'        , 'run':False, 'suffix':'05', # 'run':True
      'args':{'ns':False}},
     #------------------
-    {'step':'obs_coadd'      , 'run':True, 'suffix':'06',
+    {'step':'obs_coadd'      , 'run':False, 'suffix':'06', # 'run':True
      'args':{'method':'sum'}},
     #------------------
-    {'step':'flatfield'      , 'run':True, 'suffix':'07', 'args':{}},
+    {'step':'flatfield'      , 'run':False, 'suffix':'07', 'args':{}}, # 'run':True
     #------------------
-    {'step':'cube_gen'       , 'run':True, 'suffix':'08',
+    {'step':'cube_gen'       , 'run':False, 'suffix':'08', # 'run':True
      'args':{'multithread': False,
              'adr':True,
              #'dw_set':0.44,
@@ -272,8 +272,8 @@ def run_overscan_sub(metadata, prev_suffix, curr_suffix):
 def run_bpm_repair(metadata, prev_suffix, curr_suffix):
     full_obs_list = get_full_obs_list(metadata)
     for fn in full_obs_list:
-        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
-        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
+        in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
+        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
         if skip_done and os.path.isfile(out_fn):
             continue
         print('Repairing red bad pixels for %s' % in_fn.split('/')[-1])
@@ -285,7 +285,7 @@ def run_bpm_repair(metadata, prev_suffix, curr_suffix):
 def run_superbias(metadata, prev_suffix, curr_suffix,
                   method='row_med', **args):
     bias_list = [
-        '%s%s.p%s.fits' % (out_dir, x, prev_suffix)
+        os.path.join(out_dir, '%s.p%s.fits' % (x, prev_suffix))
         for x in metadata['bias']]
     print('Calculating Global Superbias')
     pywifes.imcombine(bias_list, superbias_fn, data_hdu=my_data_hdu)
@@ -799,7 +799,7 @@ def run_extract_stars(metadata, prev_suffix, curr_suffix, type='all',**args):
 #        in_fn  = '%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
 #        out_fn = '%s%s.x%s.dat'  % (out_dir, fn, prev_suffix)
         in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
-        out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
+        out_fn = os.path.join(out_dir, '%s.x%s.dat' % (fn, curr_suffix))
         print('Extract %s standard star from %s' % (type, in_fn.split('/')[-1]))
         pywifes.extract_wifes_stdstar(in_fn,
                                       save_fn=out_fn,
@@ -808,17 +808,21 @@ def run_extract_stars(metadata, prev_suffix, curr_suffix, type='all',**args):
     return
 
 # Sensitivity Function fit
-def run_derive_calib(metadata, prev_suffix, curr_suffix, method = 'poly',**args):
+def run_derive_calib(metadata, prev_suffix, curr_suffix, method = 'poly', **args):
     std_obs_list = get_primary_std_obs_list(metadata, type='flux')
 #    std_cube_list = ['%s%s.p%s.fits' % (out_dir, fn, prev_suffix)
 #                     for fn in std_obs_list]
 #    extract_list = ['%s%s.x%s.dat' % (out_dir, fn, prev_suffix)
 #                    for fn in std_obs_list]
+#    print('std_obs_list', std_obs_list)
     std_cube_list = [os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
                      for fn in std_obs_list]
     extract_list = [os.path.join(out_dir, '%s.x%s.dat' % (fn, prev_suffix))
                     for fn in std_obs_list]
     print('Deriving sensitivity function')
+    print('std_obs_list', std_obs_list)
+    print('std_cube_list', std_cube_list)
+    print('extract_list', extract_list)
     best_calib = pywifes.derive_wifes_calibration(
         std_cube_list,
         calib_fn,

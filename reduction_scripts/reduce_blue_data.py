@@ -58,24 +58,32 @@ proc_steps = [
     #------------------
     {'step':'superflat'      , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat'      , 'run':True, 'suffix':None,
+    {'step':'superflat'      , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
     {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
-    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
-     'args':{'type':['dome','twi'],  # ADD TWI
-     'args':{'type':['dome'], 
-             'verbose':True, 
-             'plot':False,
-             #'buffer':4,
-             'offsets':[0.4,0.4],
-             'radius':10.0,
-             'nsig_lim':3.0}},
+#    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
+#     'args':{'type':['dome','twi'],  # ADD TWI
+#     'args':{'type':['dome'],
+#             'verbose':True,
+#             'plot':True,
+#             'buffer':4,
+#             'offsets':[0.4,0.4],
+#             'radius':10.0,
+#             'nsig_lim':3.0}},
+    {'step':'flat_cleanup'   , 'run':False, 'suffix':None, # 'run':True
+    'args':{'type':['dome'], # Add 'twi' for twilight flats
+            'verbose':True,
+            'plot':False,
+            'buffer':4,
+            'offsets':[0.4,0.4],
+            'radius':10.0,
+            'nsig_lim':3.0}},
     #------------------
-    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None, # 'run':True
      'args':{'source':'dome'}},
-    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi'}},
     #------------------
     {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
