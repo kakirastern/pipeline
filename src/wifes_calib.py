@@ -173,10 +173,18 @@ def extract_wifes_stdstar(cube_fn,
     pix_size_arcsec = bin_y*0.5
     # load the cube data
     init_obj_cube_data, init_obj_cube_var, lam_array = load_wifes_cube(cube_fn)
+
+    # Checked that this is non-empty
+#    print('init_obj_cube_data', init_obj_cube_data)
+    
     inlam, iny, inx = numpy.shape(init_obj_cube_data)
+    print('inlam, iny, inx', inlam, iny, inx)
+    
     obj_cube_data = init_obj_cube_data[:,ytrim:iny-ytrim,:]
     obj_cube_var  = init_obj_cube_var[:,ytrim:iny-ytrim,:]
     nlam, ny, nx = numpy.shape(obj_cube_data)
+    print('nlam, ny, nx', nlam, ny, nx)
+    
     # get stdstar centroid
     lin_x = numpy.arange(nx,dtype='d')
     lin_y = numpy.arange(ny,dtype='d')
@@ -200,9 +208,18 @@ def extract_wifes_stdstar(cube_fn,
     #        obj_cube_data*cube_y,axis=2),axis=1)/flux
     #else:
     #    std_y = y_ctr*numpy.ones(nlam, dtype='d')
+    
+    # This checks out
+#    print('obj_cube_data', obj_cube_data)
+    
     if x_ctr == None or y_ctr == None:
         cube_im = numpy.sum(obj_cube_data, axis=0)
-        maxind = numpy.nonzero(cube_im == cube_im.max()) 
+        cube_im = numpy.nan_to_num(cube_im)
+        
+        print('cube_im', cube_im)
+        
+        maxind = numpy.nonzero(cube_im == cube_im.max())
+        print('maxind', maxind)
         yc = maxind[0][0]
         xc = maxind[1][0]
         std_x = xc*numpy.ones(nlam, dtype='d')
@@ -813,6 +830,12 @@ def derive_wifes_telluric(cube_fn_list,
             ex_data = numpy.loadtxt(extract_in_list[i])
             obs_wave = ex_data[:,0]
             obs_flux = ex_data[:,1]
+            
+        obs_wave = numpy.nan_to_num(obs_wave)
+        obs_flux = numpy.nan_to_num(obs_flux)
+        
+        print('obs_wave', obs_wave)
+        print('obs_flux', obs_flux)
         # define all the telluric regions
         O2_mask  = wavelength_mask(obs_wave, O2_telluric_bands)
         H2O_mask = wavelength_mask(obs_wave, H2O_telluric_bands)
@@ -825,6 +848,8 @@ def derive_wifes_telluric(cube_fn_list,
         smooth_poly = numpy.polyfit(obs_wave[fit_inds],
                                     obs_flux[fit_inds],
                                     polydeg)
+                                    
+        print('smooth_poly', smooth_poly)
         # get ratio of data to smooth continuum
         smooth_cont = numpy.polyval(smooth_poly, obs_wave)
         init_ratio = obs_flux / smooth_cont
@@ -937,7 +962,7 @@ def apply_wifes_telluric(inimg,
                          airmass=None):
     #---------------------------------------------
     # open the telluric corrction file
-    f1 = open(tellcorr_fn)
+    f1 = open(tellcorr_fn, 'rb')
     tellcorr_info = pickle.load(f1)
     O2_interp = scipy.interpolate.interp1d(
         tellcorr_info['wave'],

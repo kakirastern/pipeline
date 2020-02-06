@@ -154,6 +154,11 @@ def imcombine(inimg_list, outimg,
             numpy.mean(numpy.array(airmass_list)))
     # (5) write to outfile!
     outfits[data_hdu].header.set('PYWIFES', __version__, 'PyWiFeS version')
+    print('outfits type', type(outfits[0]))
+#    print('outfits', outfits[0].data)
+#    print('outfits data', outfits.data)
+#    print('outfits header', outfits.header)
+#    pyfits.writeto(outimg, outfits[0].data, header=outfits[0].header, overwrite=True)
     outfits.writeto(outimg, overwrite=True)
     gc.collect()
     return

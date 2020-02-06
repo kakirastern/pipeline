@@ -23,7 +23,7 @@ f1.close()
 # New in 0.7.x: get the project directory from the file location !
 proj_dir = os.path.dirname(__file__)
 data_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/')
-out_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_b_ys') # This folder must exist prior to reduction
+out_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_b_ys/') # This folder must exist prior to reduction
 calib_prefix = os.path.join(out_dir, 'wifesB_0919/')
 
 # Some WiFeS specific things
@@ -49,11 +49,11 @@ proc_steps = [
     #------------------
     {'step':'superbias'      , 'run':True, 'suffix':None,
      'args':{'method':'row_med', 
-             'plot':False, 
+             'plot':True,
              'verbose':False}},
     {'step':'bias_sub'       , 'run':True, 'suffix':'02',
      'args':{'method':'subtract', 
-             'plot':False, 
+             'plot':True, 
              'verbose':False}},
     #------------------
     {'step':'superflat'      , 'run':True, 'suffix':None,
@@ -63,23 +63,23 @@ proc_steps = [
              'scale':'median_nonzero'}},
     {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
-#    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
+    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
 #     'args':{'type':['dome','twi'],  # ADD TWI
-#     'args':{'type':['dome'],
-#             'verbose':True,
-#             'plot':True,
-#             'buffer':4,
-#             'offsets':[0.4,0.4],
-#             'radius':10.0,
-#             'nsig_lim':3.0}},
-    {'step':'flat_cleanup'   , 'run':False, 'suffix':None, # 'run':True
-    'args':{'type':['dome'], # Add 'twi' for twilight flats
-            'verbose':True,
-            'plot':False,
-            'buffer':4,
-            'offsets':[0.4,0.4],
-            'radius':10.0,
-            'nsig_lim':3.0}},
+     'args':{'type':['dome'],
+             'verbose':True,
+             'plot':True,
+             'buffer':4,
+             'offsets':[0.4,0.4],
+             'radius':10.0,
+             'nsig_lim':3.0}},
+#    {'step':'flat_cleanup'   , 'run':True, 'suffix':None, # 'run':True
+#    'args':{'type':['dome'], # Add 'twi' for twilight flats
+#            'verbose':True,
+#            'plot':False,
+#            'buffer':4,
+#            'offsets':[0.4,0.4],
+#            'radius':10.0,
+#            'nsig_lim':3.0}},
     #------------------
     {'step':'superflat_mef'  , 'run':True, 'suffix':None, # 'run':True
      'args':{'source':'dome'}},
@@ -257,6 +257,8 @@ def run_overscan_sub(metadata, prev_suffix, curr_suffix):
     full_obs_list = get_full_obs_list(metadata)
     # this is the only time I hard code that this step should happen first
     for fn in full_obs_list:
+#        in_fn = '%s%s.fits' % (data_dir, fn)
+#        out_fn = '%s%s.p%s.fits' % (out_dir, fn, curr_suffix)
         in_fn = os.path.join(data_dir, '%s.fits'%fn)
         out_fn = os.path.join(out_dir, '%s.p%s.fits'%(fn, curr_suffix))
         if skip_done and os.path.isfile(out_fn):
@@ -281,7 +283,7 @@ def run_bpm_repair(metadata, prev_suffix, curr_suffix):
 #------------------------------------------------------
 # Generate super-bias
 def run_superbias(metadata, prev_suffix, curr_suffix,
-                  method='row_med', **args):
+              method='row_med', **args):
     bias_list = [
         os.path.join(out_dir, '%s.p%s.fits' % (x, prev_suffix))
         for x in metadata['bias']]
@@ -292,7 +294,7 @@ def run_superbias(metadata, prev_suffix, curr_suffix,
         # Fit a smart surface to the bias or take the median
         # A bit experimental so far ... but you know what you are doing, right ?
         pywifes.generate_wifes_bias_fit(
-            superbias_fn, superbias_fit_fn, 
+            superbias_fn, superbias_fit_fn,
             data_hdu=my_data_hdu, method=method, **args)
     else:
         pywifes.imcopy(superbias_fn, superbias_fit_fn)
@@ -305,18 +307,18 @@ def run_superbias(metadata, prev_suffix, curr_suffix,
         if local_biases:
             local_bias_fn = get_associated_calib(metadata,fn,'bias')[0]
             print('Calculating Local Superbias for %s' % local_bias_fn)
-            local_superbias = os.path.join(out_dir, '%s.fits' % (local_bias_fn+'.lsb'))
-            local_superbias_fit = os.path.join(out_dir, '%s.fits' % (local_bias_fn+'.lsb_fit'))
+            local_superbias = '%s%s.fits' % (out_dir, local_bias_fn+'.lsb')
+            local_superbias_fit = '%s%s.fits' % (out_dir, local_bias_fn+'.lsb_fit')
             if os.path.isfile(local_superbias_fit):
                 continue
             # step 1 - coadd biases
             local_biases_filename = [
-                os.path.join(out_dir, '%s.p%s.fits' % (x, prev_suffix))
+                '%s%s.p%s.fits' % (out_dir, x, prev_suffix)
                 for x in local_biases]
             pywifes.imcombine(local_biases_filename,local_superbias, data_hdu=my_data_hdu)
             # step 2 - generate fit!
             if method == 'fit' or method == 'row_med':
-                pywifes.generate_wifes_bias_fit(local_superbias, 
+                pywifes.generate_wifes_bias_fit(local_superbias,
                                                 local_superbias_fit,
                                                 data_hdu=my_data_hdu,
                                                 method=method, **args)
