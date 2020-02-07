@@ -96,7 +96,7 @@ proc_steps = [
              'dlam_cut_start':5.0,
              'multithread': False}},
     {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution
-    {'step':'flat_response'  , 'run':False, 'suffix':None, # 'run':True
+    {'step':'flat_response'  , 'run':True, 'suffix':None, # 'run':True
      #~ 'args':{'mode':'all'}},
      'args':{'mode':'dome'}}, # Usually twilight flats are not taken
     #------------------
@@ -496,7 +496,7 @@ def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
         # for both to later interpolate between them.
         # Restrict it to the first two arcs in the list (in case the feature is
         # being unknowingly used).
-        local_arcs = get_associated_calib(metadata,fn, 'arc')            
+        local_arcs = get_associated_calib(metadata, fn, 'arc')            
         if local_arcs :
             for i in range(np.min([2,np.size(local_arcs)])):
                 local_arc_fn = '%s%s.p%s.fits' % (out_dir, local_arcs[i], prev_suffix)
@@ -704,7 +704,7 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
         if local_arcs :
             # Do I have two arcs ? Do they surround the Science file ?
             # Implement linear interpolation as suggested by Mike I.
-            if len(local_arcs) ==2:
+            if len(local_arcs) == 2:
                 # First, get the Science time
                 f = pyfits.open(in_fn)
                 sci_header = f[0].header
@@ -747,7 +747,7 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
                 ds1 = (t1 - t0).total_seconds()
                 ds2 = (t2 - t1).total_seconds()
                 if ds1>0 and ds2>0:
-                    # Alright, I need to interpolate betweent the two arcs
+                    # Alright, I need to interpolate between the two arcs
                     w1 = ds2/(ds1+ds2)
                     w2 = ds1/(ds1+ds2)
                      

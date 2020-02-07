@@ -34,8 +34,8 @@ my_data_hdu=0
 multithread=False # Set to false for working with macOS Catalina
 
 # SET SKIP ALREADY DONE FILES ?
-#skip_done=False
-skip_done=True
+skip_done=False
+#skip_done=True
 
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
@@ -58,32 +58,24 @@ proc_steps = [
     #------------------
     {'step':'superflat'      , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat'      , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
+    {'step':'superflat'      , 'run':True, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
     {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
     {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
-#     'args':{'type':['dome','twi'],  # ADD TWI
-     'args':{'type':['dome'],
+#     'args':{'type':['dome','twi'],
+     'args':{'type':['dome'], # Add 'twi' for twilight flats
              'verbose':True,
              'plot':True,
              'buffer':4,
              'offsets':[0.4,0.4],
              'radius':10.0,
              'nsig_lim':3.0}},
-#    {'step':'flat_cleanup'   , 'run':True, 'suffix':None, # 'run':True
-#    'args':{'type':['dome'], # Add 'twi' for twilight flats
-#            'verbose':True,
-#            'plot':False,
-#            'buffer':4,
-#            'offsets':[0.4,0.4],
-#            'radius':10.0,
-#            'nsig_lim':3.0}},
     #------------------
     {'step':'superflat_mef'  , 'run':True, 'suffix':None, # 'run':True
      'args':{'source':'dome'}},
-    {'step':'superflat_mef'  , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi'}},
     #------------------
     {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
@@ -99,7 +91,7 @@ proc_steps = [
              #~ 'doplot' : False, # True, False, or ['step1','step2']
              'dlam_cut_start':5.0,
              'multithread': multithread}},
-    {'step':'wire_soln'      , 'run':True, 'suffix':None, 'args':{}},
+    {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution
     {'step':'flat_response'  , 'run':True, 'suffix':None,
      'args':{'mode':'all'}},
      #~ 'args':{'mode':'dome'}}, # if there is no twiflat available
@@ -129,7 +121,7 @@ proc_steps = [
     {'step':'derive_calib'   , 'run':True, 'suffix':None,
      'args':{'plot_stars':False,
              'plot_sensf':True,
-             'polydeg':25,
+#             'polydeg':25,
 #             'excise_cut' : 0.005,
              'method':'smooth_SG',# 'poly' or 'smooth_SG'
              'boxcar':10, # smoothing for smooth_SG only
@@ -477,16 +469,49 @@ def run_slitlet_mef(metadata, prev_suffix, curr_suffix, ns=False):
 
 #------------------------------------------------------
 # Wavelength solution
+
+#def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
+#    # First, generate the master arc solution, based on generic arcs
+#    wsol_in_fn  = os.path.join(out_dir, '%s.p%s.fits' % ( metadata['arc'][0],
+#                                     prev_suffix))
+#    print('Deriving master wavelength solution from %s' % wsol_in_fn.split('/')[-1])
+#    pywifes.derive_wifes_wave_solution(wsol_in_fn, wsol_out_fn,
+#                                       **args)
+#    # local wave solutions for science or standards
+#    sci_obs_list  = get_sci_obs_list(metadata)
+#    std_obs_list  = get_std_obs_list(metadata)
+#    for fn in sci_obs_list + std_obs_list:
+#        # Check if the file has a dedicated arc associated with it ...
+#        # Only for Science and Std stars for now (sky not required at this stage)
+#        # (less critical for the rest anyway ...)
+#        # As per Mike I. pull request: if two arcs are present, find a solution
+#        # for both to later interpolate between them.
+#        # Restrict it to the first two arcs in the list (in case the feature is
+#        # being unknowingly used, avoid too much lost time).
+#        local_arcs = get_associated_calib(metadata,fn, 'arc')
+#        if local_arcs :
+#            for i in range(np.min([2,np.size(local_arcs)])):
+#                local_arc_fn = os.path.join(out_dir, '%s.p%s.fits' % (local_arcs[i], prev_suffix))
+#                local_wsol_out_fn = os.path.join(out_dir, '%s.wsol.fits' % (local_arcs[i]))
+#                if os.path.isfile(local_wsol_out_fn):
+#                    continue
+#                print('Deriving local wavelength solution for %s' % local_arcs[i])
+#                pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn, **args)
+#    return
+
 def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
     # First, generate the master arc solution, based on generic arcs
-    wsol_in_fn  = os.path.join(out_dir, '%s.p%s.fits' % ( metadata['arc'][0],
-                                     prev_suffix))
+    wsol_in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (metadata['arc'][0],
+                                         prev_suffix))
     print('Deriving master wavelength solution from %s' % wsol_in_fn.split('/')[-1])
-    pywifes.derive_wifes_wave_solution(wsol_in_fn, wsol_out_fn,
-                                       **args)
+    pywifes.derive_wifes_wave_solution(wsol_in_fn, wsol_out_fn, **args)
     # local wave solutions for science or standards
+    
     sci_obs_list  = get_sci_obs_list(metadata)
     std_obs_list  = get_std_obs_list(metadata)
+    print('sci_obs_list', sci_obs_list)
+    print('std_obs_list', std_obs_list)
+    
     for fn in sci_obs_list + std_obs_list:
         # Check if the file has a dedicated arc associated with it ...
         # Only for Science and Std stars for now (sky not required at this stage)
@@ -494,43 +519,51 @@ def run_wave_soln(metadata, prev_suffix, curr_suffix, **args):
         # As per Mike I. pull request: if two arcs are present, find a solution
         # for both to later interpolate between them.
         # Restrict it to the first two arcs in the list (in case the feature is
-        # being unknowingly used, avoid too much lost time).
-        local_arcs = get_associated_calib(metadata,fn, 'arc')            
-        if local_arcs :
+        # being unknowingly used).
+        local_arcs = get_associated_calib(metadata, fn, 'arc')
+        
+        print('local_arcs', local_arcs)
+        
+        if local_arcs is not None:
             for i in range(np.min([2,np.size(local_arcs)])):
-                local_arc_fn = os.path.join(out_dir, '%s.p%s.fits' % (local_arcs[i], prev_suffix))
-                local_wsol_out_fn = os.path.join(out_dir, '%s.wsol.fits' % (local_arcs[i]))
+                local_arc_fn = '%s%s.p%s.fits' % (out_dir, local_arcs[i], prev_suffix)
+                local_wsol_out_fn = '%s%s.wsol.fits' % (out_dir, local_arcs[i])
                 if os.path.isfile(local_wsol_out_fn):
                     continue
                 print('Deriving local wavelength solution for %s' % local_arcs[i])
                 pywifes.derive_wifes_wave_solution(local_arc_fn, local_wsol_out_fn, **args)
-    return
+        return
 
 #------------------------------------------------------
 # Wire solution
 def run_wire_soln(metadata, prev_suffix, curr_suffix):
     # Global wire solution
-    wire_in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (out_dir,
-                                     metadata['wire'][0],
-                                     prev_suffix))
+    wire_in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (metadata['wire'][0], prev_suffix))
     print('Deriving global wire solution from %s' % wire_in_fn.split('/')[-1])
     pywifes.derive_wifes_wire_solution(wire_in_fn, wire_out_fn)
     # Wire solutions for any specific obsevations
-    sci_obs_list  = get_sci_obs_list(metadata)
-    std_obs_list  = get_std_obs_list(metadata)
+    sci_obs_list = get_sci_obs_list(metadata)
+    std_obs_list = get_std_obs_list(metadata)
+    
+    print('sci_obs_list', sci_obs_list)
+    print('std_obs_list', std_obs_list)
+    
     for fn in sci_obs_list + std_obs_list:
         # Check if the file has a dedicated wire associated with it ...
         # Only for Science and Std stars for now (sky not required at this stage)
         # (less critical for the rest anyway ...)
-        local_wires = get_associated_calib(metadata,fn, 'wire')            
-        if local_wires :
+        local_wires = get_associated_calib(metadata, fn, 'wire')
+        
+        print('local_wires', local_wires)
+        
+        if local_wires is not None:
             local_wire_fn = os.path.join(out_dir, '%s.p%s.fits' % (local_wires[0], prev_suffix))
             local_wire_out_fn = os.path.join(out_dir, '%s.wire.fits' % (out_dir, local_wires[0]))
             if os.path.isfile(local_wire_out_fn):
                 continue
             print('Deriving local wire solution for %s' % local_wires[0])
             pywifes.derive_wifes_wire_solution(local_wire_fn, local_wire_out_fn)
-    return
+        return
 
 #------------------------------------------------------
 # Cosmic Rays
@@ -660,10 +693,10 @@ def run_obs_coadd(metadata, prev_suffix, curr_suffix,
 
 #------------------------------------------------------
 # Flatfield Response
-def run_flat_response(metadata, prev_suffix, curr_suffix,
-                      mode='all'):
+def run_flat_response(metadata, prev_suffix, curr_suffix, mode='all'):
     # now fit the desired style of response function
     print('Generating flatfield response function')
+    
     if mode == 'all':
         pywifes.wifes_2dim_response(super_dflat_mef,
                                     super_tflat_mef,
@@ -702,8 +735,8 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
     for fn in sci_obs_list+std_obs_list:
         in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
         out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
-        if skip_done and os.path.isfile(out_fn):
-            continue
+#        if skip_done and os.path.isfile(out_fn):
+#            continue
         print('Generating Data Cube for %s' % in_fn.split('/')[-1])
         # decide whether to use global or local wsol and wire files
         local_wires = get_associated_calib(metadata,fn, 'wire')
@@ -716,7 +749,7 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
         if local_arcs :
             # Do I have two arcs ? Do they surround the Science file ?
             # Implement linear interpolation as suggested by Mike I. 
-            if len(local_arcs) ==2:
+            if len(local_arcs) == 2:
                 # First, get the Science time
                 f = pyfits.open(in_fn)
                 sci_header = f[0].header
@@ -725,7 +758,9 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
                 arc_times = ['','']
                 for i in range(2):
                     # Fetch the arc time from the "extra" pkl file
+#                    local_wsol_out_fn_extra = os.path.join(out_dir, '%s.wsol.fits_extra.pkl' % (local_arcs[i]))
                     local_wsol_out_fn_extra = os.path.join(out_dir, '%s.wsol.fits_extra.pkl' % (local_arcs[i]))
+
                     f = open(local_wsol_out_fn_extra, 'rb') 
                     try:
                         f_pickled = pickle.load(f, protocol=2) # TODO: see if this works
@@ -759,7 +794,7 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
                 ds1 = (t1 - t0).total_seconds()
                 ds2 = (t2 - t1).total_seconds()
                 if ds1>0 and ds2>0:
-                    # Alright, I need to interpolate betweent the two arcs
+                    # Alright, I need to interpolate between the two arcs
                     w1 = ds1/(ds1+ds2)
                     w2 = ds2/(ds1+ds2)
                      
