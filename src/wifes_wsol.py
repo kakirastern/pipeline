@@ -206,7 +206,7 @@ def mpfit_gauss_line(packaged_args):
                 'limited':[1,1], 'limits':[width_guess/20.,width_guess]},
                ]
 
-    my_fit = mpfit.mpfit(err_gauss_line,functkw=fa, parinfo=parinfo, quiet=True)
+    my_fit = mpfit.mpfit(err_gauss_line,functkw=fa, parinfo=parinfo, quiet=False)
     p1 = my_fit.params
     #print p1, my_fit.status
 
@@ -231,7 +231,7 @@ def mpfit_gauss_line(packaged_args):
 def weighted_loggauss_arc_fit(subbed_arc_data,
                               peak_centers,
                               width_guess,
-                              find_method = 'mpfit',
+                              find_method = 'loggauss',
                               multithread = False):
     '''
     This function works - February 7th, 2020.
@@ -263,7 +263,7 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
             weights = yfit[good_pix]
             A_mat = numpy.transpose(numpy.transpose(P)*(weights**2))
             B_mat = numpy.log(yfit[good_pix])*(weights**2)
-            results = numpy.linalg.lstsq(A_mat, B_mat, rcond=-1)
+            results = numpy.linalg.lstsq(A_mat, B_mat, rcond=None)
             
             # FutureWarning: `rcond` parameter will change to the default of machine precision times ``max(M, N)`` where M and N are the input matrix dimensions.
             # To use the future default and silence this warning we advise to pass `rcond=None`, to keep using the old, explicitly pass `rcond=-1`.
@@ -299,7 +299,7 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
             xfit = x[ifit_lo:ifit_hi]
             yfit = y[ifit_lo:ifit_hi]
             try:
-                good_pix = numpy.nonzero(yfit > 0.2*yfit.max())[0]
+                good_pix = numpy.nonzero(yfit > 0.2 * yfit.max())[0]
             except:
                 fitted_centers[i] = float('nan')
                 continue
@@ -309,10 +309,10 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
             # Do the threading (see below and http://stackoverflow.com/a/3843313)
             # MJI: with the following test, the code ran faster, but even just the Pool(cpu)
             # command slowed things down. 
-#            jobs2 = [jobs[:len(jobs)//4], jobs[len(jobs)//4:2*len(jobs)//4],jobs[2*len(jobs)//4:3*len(jobs)//4],jobs[3*len(jobs)//4:]]
+            jobs2 = [jobs[:len(jobs)//4], jobs[len(jobs)//4:2*len(jobs)//4],jobs[2*len(jobs)//4:3*len(jobs)//4],jobs[3*len(jobs)//4:]]
 #            results = mypool.imap_unordered(utils.lsq_gauss_line,jobs2)
             results = []
-            for job in jobs:
+            for job in jobs2:
                 print('job', job)
                 result = lsq_gauss_line(job)
                 results.append(result)
@@ -377,6 +377,8 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
     elif find_method == 'mpfit' or find_method =='least_squares':
         print('find_method: %s' %find_method)
         print('fitted_centers', fitted_centers)
+        
+        # Supposedly fitted centers are the physical coordinates as opposed to their corresponding wavelength values
         return fitted_centers
 
 def quick_arcline_fit(arc_data,
@@ -542,7 +544,7 @@ def find_lines_and_guess_refs(slitlet_data,
     full_ref_lam = []
     if verbose:
         print('Slitlet', chosen_slitlet)
-        print('Detecting arc lines with ',find_method,'...')
+        print('Detecting arc lines with',find_method,'...')
         start = datetime.datetime.now()
 
     # Fred's update (wsol)
@@ -643,7 +645,7 @@ def find_lines_and_guess_refs(slitlet_data,
         # B3000, R3000, B7000, I7000 with CuAr lamp
         if arc_name != 'NeAr' and arc_name != 'CuAr' :
             print('Arc lamp not supported for Xcorr identification method!')
-            print("I will crash now... bye !")
+            print("I will crash now... bye!")
             print(' ')
         ref_fn = os.path.join(metadata_dir,
                               'arclines.'+grating+'.'+arc_name+'.txt')
@@ -658,7 +660,7 @@ def find_lines_and_guess_refs(slitlet_data,
         # Check which one
         f = open(ref_fn,'r')
         print('f.readline()', f.readline())
-        if 'Channel' in f.readline() and 'b' in grating:
+        if 'Channel' in f.readline() and 'B' in grating:
             ref_arc[:,0]= ncols - ref_arc[:,0]
         f.close() 
 
@@ -705,7 +707,7 @@ def find_lines_and_guess_refs(slitlet_data,
         for job in jobs:
             result = xcorr_shift_all(*job)
             results.append(result)
-        print('Only 1 cpu is used and multiprocessing is avoided...')
+#        print('Only 1 cpu is used and multiprocessing is avoided...')
         print('xcorr results', results)
 
         # All done ! Now, let's collect the results ...
@@ -1011,7 +1013,7 @@ def slitlet_wsol(slitlet_data,
                  x_polydeg=4, y_polydeg=2,
                  flux_threshold_nsig=3.0,
                  deriv_threshold_nsig=1.0,
-                 verbose=False):
+                 verbose=True):
     #-----------------------------------
     # get arclines
     if ref_arclines == None:
@@ -1220,7 +1222,7 @@ def derive_wifes_polynomial_wave_solution(inimg,
         f1.close()
     # fit each slitlet
     for i in range(1,26):
-        if halfframe and i>12:
+        if halfframe and i > 12:
             wave_data = numpy.zeros(numpy.shape(a[i].data), dtype='d')
         else:
             new_y, new_x, new_ref, xpoly, ypoly = slitlet_wsol(
@@ -1711,6 +1713,8 @@ def derive_wifes_optical_wave_solution(inimg,
         print('Line finding complete')
     # NEED TO (FOR NOW) HAVE COMPLIANCE WITH NIELSEN 'LINES' TEMPLATE
     lines = numpy.column_stack((all_s, all_y, all_x, all_r))
+    print('lines', lines)
+    
     grating = grating.lower()
     alls, ally, allx, allarcs = om.extractArrays(lines, grating, bin_x, bin_y)
     #------------------------------------------------------

@@ -695,13 +695,13 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
         print('Generating Data Cube for %s' % in_fn.split('/')[-1])
         # decide whether to use global or local wsol and wire files
         local_wires = get_associated_calib(metadata,fn, 'wire')
-        if local_wires :
+        if local_wires:
             wire_fn = '%s%s.wire.fits' % (out_dir, local_wires[0])
             print('(Note: using %s as wire file)' % wire_fn.split('/')[-1])
         else:
             wire_fn = wire_out_fn
         local_arcs = get_associated_calib(metadata,fn, 'arc')
-        if local_arcs :
+        if local_arcs:
             # Do I have two arcs ? Do they surround the Science file ?
             # Implement linear interpolation as suggested by Mike I.
             if len(local_arcs) == 2:

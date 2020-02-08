@@ -3,7 +3,7 @@ from astropy.io import fits as pyfits
 import numpy
 import pickle
 import scipy.interpolate
-import multiprocessing
+#import multiprocessing
 import subprocess
 from wifes_metadata import metadata_dir
 from wifes_imtrans import blkrep, blkavg, transform_data, detransform_data
@@ -2637,7 +2637,7 @@ def generate_wifes_cube_oneproc(
     inimg, outimg,
     wire_fn,
     wsol_fn,
-    wmin_set = None, wmax_set = None, dw_set = None,
+    wmin_set=None, wmax_set=None, dw_set=None,
     bin_x=None, bin_y=None,
     ny_orig=76,
     offset_orig=4,
@@ -2646,7 +2646,8 @@ def generate_wifes_cube_oneproc(
     adr=False):
     #---------------------------
     # check if halfframe
-    halfframe = is_halfframe(inimg)
+#    halfframe = is_halfframe(inimg) # Undo this if necessary
+    halfframe = False
     if halfframe:
         nslits = 12
     else:
@@ -2692,8 +2693,8 @@ def generate_wifes_cube_oneproc(
     else : 
         disp_ave = numpy.mean(frame_wdisps)
     if verbose:
-        print(' Data spectral resolution (min/max):',numpy.round(numpy.min(frame_wdisps),4),numpy.round(numpy.max(frame_wdisps),4))
-        print(' Cube spectral resolution : ',disp_ave)
+        print('Data spectral resolution (min/max):',numpy.round(numpy.min(frame_wdisps),4),numpy.round(numpy.max(frame_wdisps),4))
+        print('Cube spectral resolution : ', disp_ave)
     # excise lowest pixel so interpolation doesn't fail
     frame_wmin += disp_ave
     # finally check against the user input value
@@ -2720,7 +2721,7 @@ def generate_wifes_cube_oneproc(
     nx=25
     nlam=len(out_lambda)
     # for each slitlet...
-    init_out_y = numpy.arange(ny,dtype='d')
+    init_out_y = numpy.arange(ny, dtype='d')
     out_y = init_out_y - numpy.median(init_out_y)
     out_y_full, out_lambda_full = numpy.meshgrid(out_y, out_lambda)
     #---------------------------
@@ -2825,7 +2826,7 @@ def generate_wifes_cube_oneproc(
         in_x = numpy.arange(-1,nslits+1,1, dtype='d') 
         out_x = numpy.arange(nslits, dtype='d')
         if verbose:
-            print(' -> Step 2: interpolating along x (1D interp.)')
+            print('-> Step 2: interpolating along x (1D interp.)')
         for i in range(0,nlam) :
             adr = adr_x_y(numpy.array([out_lambda[i]]),
                           secz,ha,dec,lat, teltemp = 0.0, 
