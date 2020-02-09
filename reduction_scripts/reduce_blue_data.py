@@ -24,7 +24,7 @@ f1.close()
 proj_dir = os.path.dirname(__file__)
 data_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/')
 out_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_b_ys/') # This folder must exist prior to reduction
-calib_prefix = os.path.join(out_dir, 'wifesB_0919/')
+calib_prefix = os.path.join(out_dir, 'wifesB_0919/calib')
 
 # Some WiFeS specific things
 my_data_hdu=0
