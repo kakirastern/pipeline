@@ -511,7 +511,7 @@ def derive_wifes_calibration(cube_fn_list,
         # Didn't find any stars - there's no point in continuing
         raise Exception('Could not find calibration data for any stars!')
     if norm_stars:
-        i_mid = len(fratio_results[0][0])/2
+        i_mid = len(fratio_results[0][0])//2
         fscale_max = min([x[1][i_mid] for x in fratio_results])
         init_full_y = numpy.concatenate(
             [x[1]-x[1][i_mid]+fscale_max for x in fratio_results])
@@ -640,7 +640,7 @@ def derive_wifes_calibration(cube_fn_list,
     # SAVE IN THE PICKLE FILE THE WAVELENGTH AND CALIB FVAL ARRAYS
     save_calib = {'wave' : final_x,
                   'cal'  : final_y}
-    f1 = open(calib_out_fn, 'w')
+    f1 = open(calib_out_fn, 'wb')
     pickle.dump(save_calib, f1)
     f1.close()
     return
@@ -674,7 +674,7 @@ def calibrate_wifes_cube(inimg, outimg,
     wave_array = wave0+dwave*numpy.arange(nlam,dtype='d')
     # calculate the flux calibration array
     if mode == 'pywifes':
-        f1 = open(calib_fn, 'r')
+        f1 = open(calib_fn, 'rb')
         calib_info = pickle.load(f1)
         f1.close()
         sort_order = calib_info['wave'].argsort()
@@ -882,7 +882,7 @@ def derive_wifes_telluric(cube_fn_list,
         'H2O'  : final_H2O_corr,
         'O2_power' : O2_power,
         'H2O_power' : H2O_power}
-    f1 = open(out_fn, 'w')
+    f1 = open(out_fn, 'wb')
     pickle.dump(tellcorr_info, f1)
     f1.close()
     return
