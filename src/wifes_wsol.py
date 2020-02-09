@@ -658,7 +658,9 @@ def find_lines_and_guess_refs(slitlet_data,
 #        results = mypool.imap_unordered(xcorr_shift_all,jobs)
 #        mypool.close()
 #        mypool.join()
-
+        
+        results = xcorr_shift_all(jobs)
+        
         # All done ! Now, let's collect the results ...
         # Careful, the order may be random ... !
         for this_fit in results:
