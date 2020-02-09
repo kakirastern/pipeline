@@ -31,7 +31,7 @@ my_data_hdu=0
 
 # SET MULTITHREAD ?
 #~ multithread=False
-multithread=True
+multithread=False
 
 # SET SKIP ALREADY DONE FILES ?
 skip_done=False
@@ -64,7 +64,7 @@ proc_steps = [
     {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
     {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
-     'args':{'type':['dome','twi'],  # ADD TWI
+#     'args':{'type':['dome','twi'],  # ADD TWI
      'args':{'type':['dome'], 
              'verbose':True, 
              'plot':False,
@@ -85,7 +85,7 @@ proc_steps = [
      'args':{'verbose':True,
              'method' : 'optical',
              'shift_method' : 'xcorr_all',
-             'find_method' : 'mpfit',
+             'find_method' : 'least_squares',
              'doalphapfit' : True,
              'doplot' : ['step2'], # True, False, or ['step1','step2']
              #~ 'doplot' : False, # True, False, or ['step1','step2']
@@ -676,8 +676,8 @@ def run_flatfield(metadata, prev_suffix, curr_suffix):
     for fn in sci_obs_list+std_obs_list:
         in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
         out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
-        if skip_done and os.path.isfile(out_fn):
-            continue
+#        if skip_done and os.path.isfile(out_fn):
+#            continue
         print('Flat-fielding image %s' % in_fn.split('/')[-1])
         pywifes.imarith_mef(in_fn, '/',
                             flat_resp_fn,
@@ -693,8 +693,8 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
     for fn in sci_obs_list+std_obs_list:
         in_fn  = os.path.join(out_dir, '%s.p%s.fits' % (fn, prev_suffix))
         out_fn = os.path.join(out_dir, '%s.p%s.fits' % (fn, curr_suffix))
-        if skip_done and os.path.isfile(out_fn):
-            continue
+#        if skip_done and os.path.isfile(out_fn):
+#            continue
         print('Generating Data Cube for %s' % in_fn.split('/')[-1])
         # decide whether to use global or local wsol and wire files
         local_wires = get_associated_calib(metadata,fn, 'wire')

@@ -233,7 +233,7 @@ def weighted_loggauss_arc_fit(subbed_arc_data,
                               peak_centers,
                               width_guess,
                               find_method = 'mpfit',
-                              multithread = True): 
+                              multithread = False):
     N = len(subbed_arc_data)
     x = numpy.arange(N,dtype='d')
     y = subbed_arc_data
@@ -460,7 +460,7 @@ def find_lines_and_guess_refs(slitlet_data,
                               grating,
                               arc_name,
                               find_method='mpfit',
-                              shift_method='xcorr_all',
+                              shift_method='xcorr_grid',
                               ref_arclines=None,
                               dlam_cut_start=5.0,
                               bin_x=1, bin_y=1,
@@ -648,16 +648,16 @@ def find_lines_and_guess_refs(slitlet_data,
                 jobs.append( (chosen_slitlet,i,ncols,row_inds,
                               init_x_array[row_inds],ref_arc, 
                               [best_stretch], False, verbose) )
-        if multithread :
-            cpu = None
-        else :
-            cpu = 1
-        if verbose :
-            print('  ... assign lambdas using up to %d cpu(s) ...' % multiprocessing.cpu_count())
-        mypool = multiprocessing.Pool(cpu)
-        results = mypool.imap_unordered(xcorr_shift_all,jobs)
-        mypool.close()
-        mypool.join()
+#        if multithread :
+#            cpu = None
+#        else :
+#            cpu = 1
+#        if verbose :
+#            print('  ... assign lambdas using up to %d cpu(s) ...' % multiprocessing.cpu_count())
+#        mypool = multiprocessing.Pool(cpu)
+#        results = mypool.imap_unordered(xcorr_shift_all,jobs)
+#        mypool.close()
+#        mypool.join()
 
         # All done ! Now, let's collect the results ...
         # Careful, the order may be random ... !
@@ -1556,7 +1556,7 @@ def derive_wifes_optical_wave_solution(inimg,
                                        doplot=False,
                                        savefigs=False,
                                        save_prefix='wsol_',
-                                       multithread=True):
+                                       multithread=False):
   """ The main user-callable function that performs the fit"""
   #------------------------------------------------------
   # *** Mike's edits: operate on PyWiFeS MEF files ***
