@@ -91,7 +91,7 @@ proc_steps = [
              'doalphapfit' : True,
              'doplot' : ['step2'], # True, False, or ['step1','step2']
              'shift_method' : 'xcorr_all',
-             'find_method' : 'mpfit',
+             'find_method' : 'loggauss',
              'dlam_cut_start':5.0,
              'multithread': multithread}},
     {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution

@@ -765,7 +765,7 @@ def run_cube_gen(metadata, prev_suffix, curr_suffix, **args):
                          fits0[i].data = w1*fits0[i].data + w2*fits1[i].data
 
                     wsol_fn = os.path.join(out_dir, '%s.wsol.fits' % (fn))
-                    fits0.writeto(wsol_fn, clobber=True)
+                    fits0.writeto(wsol_fn, overwrite=True)
 
                     print('(2 arcs found)')
                     print('(Note: using %sx%s.wsol.fits + %sx%s.wsol.fits as wsol file)' % (np.round(w1,2),local_arcs[0],np.round(w2,2),local_arcs[1]))
