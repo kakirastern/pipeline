@@ -27,16 +27,16 @@ f1.close()
 # Where is everything ?
 # New in 0.7.x: get the project directory from the file location !
 proj_dir = os.path.dirname(__file__)
-data_dir = os.path.join(proj_dir,'raw_data/')
-out_dir  = os.path.join(proj_dir,'reduc_r/') # You need to create this folder prior to running this script.
-calib_prefix = os.path.join(out_dir,'wifesR_20150314')
+data_dir = os.path.join(proj_dir,'/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/')
+out_dir  = os.path.join(proj_dir,'/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_r/') # You need to create this folder prior to running this script.
+calib_prefix = os.path.join(out_dir,'wifesR_0919/calib')
 
 # Some WiFeS specific things
 my_data_hdu=0
 
 # SET MULTITHREAD ?
 #~ multithread=False
-multithread=True # THIS DOESN'T WORK WITH PYTHON 2.7
+multithread=False # THIS DOESN'T WORK WITH PYTHON 2.7
 
 # SET SKIP ALREADY DONE FILES ?
 skip_done=False
@@ -49,26 +49,26 @@ skip_done=False
 #************************************************************************
 proc_steps = [
     #------------------
-    {'step':'overscan_sub'   , 'run':True, 'suffix':'00', 'args':{}},
-    {'step':'bpm_repair'     , 'run':True, 'suffix':'01', 'args':{}},
+    {'step':'overscan_sub'   , 'run':False, 'suffix':'00', 'args':{}},
+    {'step':'bpm_repair'     , 'run':False, 'suffix':'01', 'args':{}},
     #------------------
-    {'step':'superbias'      , 'run':True, 'suffix':None,
+    {'step':'superbias'      , 'run':False, 'suffix':None,
      'args':{'method':'row_med', 
              'plot':True, 
              'verbose':False}},
-    {'step':'bias_sub'       , 'run':True, 'suffix':'02',
+    {'step':'bias_sub'       , 'run':False, 'suffix':'02',
      'args':{'method':'subtract', 
              'plot':False, 
              'verbose':False}},
     #------------------
-    {'step':'superflat'      , 'run':True, 'suffix':None,
+    {'step':'superflat'      , 'run':False, 'suffix':None,
      'args':{'source':'dome'}},
     {'step':'superflat'      , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
-    {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
+    {'step':'slitlet_profile', 'run':False, 'suffix':None, 'args':{}},
     #------------------
-    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
+    {'step':'flat_cleanup'   , 'run':False, 'suffix':None,
      'args':{'type':['dome'], # Add 'twi' for twilight flats
              'verbose':True, 
              'plot':True,
@@ -77,12 +77,12 @@ proc_steps = [
              'radius':10.0,
              'nsig_lim':3.0}},
     #------------------
-    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':False, 'suffix':None,
      'args':{'source':'dome'}},
     {'step':'superflat_mef'  , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi'}},
     #------------------
-    {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
+    {'step':'slitlet_mef'    , 'run':False, 'suffix':'03',
      'args':{'ns':False}},
     #------------------
     {'step':'wave_soln'      , 'run':True, 'suffix':None,
