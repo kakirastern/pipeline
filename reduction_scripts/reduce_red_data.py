@@ -49,27 +49,27 @@ skip_done=False
 #************************************************************************
 proc_steps = [
     #------------------
-    {'step':'overscan_sub'   , 'run':False, 'suffix':'00', 'args':{}},
-    {'step':'bpm_repair'     , 'run':False, 'suffix':'01', 'args':{}},
+    {'step':'overscan_sub'   , 'run':True, 'suffix':'00', 'args':{}},
+    {'step':'bpm_repair'     , 'run':True, 'suffix':'01', 'args':{}},
     #------------------
-    {'step':'superbias'      , 'run':False, 'suffix':None,
+    {'step':'superbias'      , 'run':True, 'suffix':None,
      'args':{'method':'row_med', 
              'plot':True, 
              'verbose':False}},
-    {'step':'bias_sub'       , 'run':False, 'suffix':'02',
+    {'step':'bias_sub'       , 'run':True, 'suffix':'02',
      'args':{'method':'subtract', 
              'plot':False, 
              'verbose':False}},
     #------------------
-    {'step':'superflat'      , 'run':False, 'suffix':None,
+    {'step':'superflat'      , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat'      , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
+    {'step':'superflat'      , 'run':True, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
-    {'step':'slitlet_profile', 'run':False, 'suffix':None, 'args':{}},
+    {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
-    {'step':'flat_cleanup'   , 'run':False, 'suffix':None,
-     'args':{'type':['dome'], # Add 'twi' for twilight flats
+    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
+     'args':{'type':['dome', 'twi'], # Add 'twi' for twilight flats
              'verbose':True, 
              'plot':True,
              'buffer':4,
@@ -77,12 +77,12 @@ proc_steps = [
              'radius':10.0,
              'nsig_lim':3.0}},
     #------------------
-    {'step':'superflat_mef'  , 'run':False, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat_mef'  , 'run':False, 'suffix':None, # Set to True if you want to include twilight flat
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None, # Set to True if you want to include twilight flat
      'args':{'source':'twi'}},
     #------------------
-    {'step':'slitlet_mef'    , 'run':False, 'suffix':'03',
+    {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
      'args':{'ns':False}},
     #------------------
     {'step':'wave_soln'      , 'run':True, 'suffix':None,
@@ -97,7 +97,7 @@ proc_steps = [
     {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set to True if you want to include wire solution
     {'step':'flat_response'  , 'run':True, 'suffix':None,
      #~ 'args':{'mode':'all'}},
-     'args':{'mode':'dome'}}, # Usually twilight flats are not taken
+     'args':{'mode':'all'}}, # Usually twilight flats are not taken
     #------------------
     {'step':'cosmic_rays'    , 'run':True, 'suffix':'04',
      'args':{'ns':False, 
