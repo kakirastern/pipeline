@@ -24,7 +24,7 @@ f1.close()
 proj_dir = os.path.dirname(__file__)
 data_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/')
 out_dir = os.path.join(proj_dir, '/Users/krisstern/pipeline/reduction_scripts/WiFeS-0919-combined/reduced_b_ys/') # This folder must exist prior to reduction
-calib_prefix = os.path.join(out_dir, 'wifesB_0919')
+calib_prefix = os.path.join(out_dir, 'wifesB_0919/')
 
 # Some WiFeS specific things
 my_data_hdu=0
@@ -44,26 +44,26 @@ skip_done=False
 #************************************************************************
 proc_steps = [
     #------------------
-    {'step':'overscan_sub'   , 'run':False, 'suffix':'00', 'args':{}},
-    {'step':'bpm_repair'     , 'run':False, 'suffix':'01', 'args':{}},
+    {'step':'overscan_sub'   , 'run':True, 'suffix':'00', 'args':{}},
+    {'step':'bpm_repair'     , 'run':True, 'suffix':'01', 'args':{}},
     #------------------
-    {'step':'superbias'      , 'run':False, 'suffix':None,
+    {'step':'superbias'      , 'run':True, 'suffix':None,
      'args':{'method':'row_med', 
              'plot':False, 
              'verbose':False}},
-    {'step':'bias_sub'       , 'run':False, 'suffix':'02',
+    {'step':'bias_sub'       , 'run':True, 'suffix':'02',
      'args':{'method':'subtract', 
              'plot':False, 
              'verbose':False}},
     #------------------
-    {'step':'superflat'      , 'run':False, 'suffix':None,
+    {'step':'superflat'      , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat'      , 'run':False, 'suffix':None,
+    {'step':'superflat'      , 'run':True, 'suffix':None,
      'args':{'source':'twi', 
              'scale':'median_nonzero'}},
-    {'step':'slitlet_profile', 'run':False, 'suffix':None, 'args':{}},
+    {'step':'slitlet_profile', 'run':True, 'suffix':None, 'args':{}},
     #------------------
-    {'step':'flat_cleanup'   , 'run':False, 'suffix':None,
+    {'step':'flat_cleanup'   , 'run':True, 'suffix':None,
 #     'args':{'type':['dome','twi'],  # ADD TWI
      'args':{'type':['dome'], 
              'verbose':True, 
@@ -73,12 +73,12 @@ proc_steps = [
              'radius':10.0,
              'nsig_lim':3.0}},
     #------------------
-    {'step':'superflat_mef'  , 'run':False, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
      'args':{'source':'dome'}},
-    {'step':'superflat_mef'  , 'run':False, 'suffix':None,
+    {'step':'superflat_mef'  , 'run':True, 'suffix':None,
      'args':{'source':'twi'}},
     #------------------
-    {'step':'slitlet_mef'    , 'run':False, 'suffix':'03',
+    {'step':'slitlet_mef'    , 'run':True, 'suffix':'03',
      'args':{'ns':False}},
     #------------------
     {'step':'wave_soln'      , 'run':True, 'suffix':None,
@@ -91,7 +91,7 @@ proc_steps = [
              #~ 'doplot' : False, # True, False, or ['step1','step2']
              'dlam_cut_start':5.0,
              'multithread': multithread}},
-    {'step':'wire_soln'      , 'run':True, 'suffix':None, 'args':{}},
+    {'step':'wire_soln'      , 'run':False, 'suffix':None, 'args':{}}, # Set 'run':False unless wire solution is to be derived
     {'step':'flat_response'  , 'run':True, 'suffix':None,
      'args':{'mode':'all'}},
      #~ 'args':{'mode':'dome'}}, # if there is no twiflat available
