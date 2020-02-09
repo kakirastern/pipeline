@@ -1158,7 +1158,7 @@ def derive_wifes_polynomial_wave_solution(inimg,
         arc_name = re.sub('_', '', again_arc_name)
     # set the arc linelist!
     if ref_arcline_file != None:
-        f1 = open(ref_arcline_file, 'r')
+        f1 = open(ref_arcline_file, 'rb')
         ref_arclines = numpy.array([float(line.split()[0])
                                     for line in f1.readlines()])
         f1.close()
@@ -1242,7 +1242,7 @@ def save_found_lines(inimg,
         arc_name = re.sub('_', '', again_arc_name)
     # set the arc linelist!
     if ref_arcline_file != None:
-        f1 = open(ref_arcline_file, 'r')
+        f1 = open(ref_arcline_file, 'rb')
         ref_arclines = numpy.array([float(line.split()[0])
                                     for line in f1.readlines()])
         f1.close()
@@ -1585,7 +1585,7 @@ def derive_wifes_optical_wave_solution(inimg,
       arc_name = re.sub('_', '', again_arc_name)
   # set the arc linelist!
   if ref_arcline_file != None:
-      f1 = open(ref_arcline_file, 'r')
+      f1 = open(ref_arcline_file, 'rb')
       ref_arclines = numpy.array([float(line.split()[0])
                                   for line in f1.readlines()])
       f1.close()
