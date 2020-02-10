@@ -58,7 +58,7 @@ proc_steps = [
              'verbose':False}},
     {'step':'bias_sub'       , 'run':True, 'suffix':'02',
      'args':{'method':'subtract', 
-             'plot':False, 
+             'plot':True,
              'verbose':False}},
     #------------------
     {'step':'superflat'      , 'run':True, 'suffix':None,
