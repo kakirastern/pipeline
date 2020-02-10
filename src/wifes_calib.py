@@ -893,7 +893,7 @@ def apply_wifes_telluric(inimg,
                          airmass=None):
     #---------------------------------------------
     # open the telluric corrction file
-    f1 = open(tellcorr_fn)
+    f1 = open(tellcorr_fn, 'rb')
     tellcorr_info = pickle.load(f1)
     O2_interp = scipy.interpolate.interp1d(
         tellcorr_info['wave'],
